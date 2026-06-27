@@ -1,0 +1,27 @@
+{
+  "name": "vk-edu-quiz",
+  "version": "1.0.0",
+  "description": "vk edu project",
+  "private": "true",
+  "keywords": [
+    "quiz"
+  ],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:web": "bun --filter @quiz/web dev",
+    "dev:api": "bun --filter @quiz/api dev"
+  },
+  "homepage": "https://github.com/DjonniStorm/vk-edu-quiz#readme",
+  "bugs": {
+    "url": "https://github.com/DjonniStorm/vk-edu-quiz/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DjonniStorm/vk-edu-quiz.git"
+  },
+  "license": "ISC",
+  "author": "ilya"
+}
