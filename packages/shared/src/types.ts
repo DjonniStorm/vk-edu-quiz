@@ -1,0 +1,92 @@
+import type {
+  AnswerMode,
+  ParticipantStatus,
+  QuizStatus,
+  RoomStatus,
+  UserRole,
+} from "./enums";
+
+export type EntityId = string;
+export type IsoDateString = string;
+
+export interface PaginationQuery {
+  limit?: number;
+  offset?: number;
+}
+
+export interface PaginatedResult<TItem> {
+  items: TItem[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export interface CurrentUserDto {
+  id: EntityId;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
+export interface AuthTokensDto {
+  accessToken: string;
+}
+
+export interface AuthResponseDto {
+  user: CurrentUserDto;
+  tokens: AuthTokensDto;
+}
+
+export interface LiveAnswerOptionDto {
+  id: EntityId;
+  text: string;
+  orderIndex: number;
+}
+
+export interface LiveQuestionDto {
+  id: EntityId;
+  text: string;
+  answerMode: AnswerMode;
+  orderIndex: number;
+  timeLimitSec: number;
+  points: number;
+  answerOptions: LiveAnswerOptionDto[];
+  startedAt: IsoDateString;
+  endsAt: IsoDateString;
+}
+
+export interface LeaderboardItemDto {
+  roomParticipantId: EntityId;
+  displayName: string;
+  score: number;
+  correctAnswersCount: number;
+  totalAnswerTimeMs: number;
+}
+
+export interface RoomSummaryDto {
+  id: EntityId;
+  quizId: EntityId;
+  organizerId: EntityId;
+  status: RoomStatus;
+  currentQuestionId: EntityId | null;
+  inviteUrl: string;
+}
+
+export interface RoomParticipantDto {
+  id: EntityId;
+  userId: EntityId | null;
+  displayName: string;
+  status: ParticipantStatus;
+  score: number;
+  correctAnswersCount: number;
+  totalAnswerTimeMs: number;
+}
+
+export interface QuizListItemDto {
+  id: EntityId;
+  title: string;
+  description: string | null;
+  category: string | null;
+  status: QuizStatus;
+  questionsCount: number;
+}

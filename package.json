@@ -12,7 +12,11 @@
   ],
   "scripts": {
     "dev:web": "bun --filter @quiz/web dev",
-    "dev:api": "bun --filter @quiz/api dev"
+    "dev:backend": "bun --filter @quiz/backend dev",
+    "dev:api": "bun --filter @quiz/backend dev",
+    "db:dev:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:dev:down": "docker compose -f docker-compose.dev.yml down",
+    "db:dev:logs": "docker compose -f docker-compose.dev.yml logs -f postgres"
   },
   "homepage": "https://github.com/DjonniStorm/vk-edu-quiz#readme",
   "bugs": {

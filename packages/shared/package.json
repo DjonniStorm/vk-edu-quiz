@@ -1,12 +1,22 @@
 {
   "name": "@quiz/shared",
   "version": "1.0.0",
-  "description": "",
+  "description": "Shared enums, DTO types and Zod schemas for the quiz app.",
   "license": "ISC",
   "author": "",
-  "type": "commonjs",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "peerDependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "zod": "^4.4.3"
   }
 }
