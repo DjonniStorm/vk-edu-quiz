@@ -32,7 +32,7 @@ export class UserStore {
 
     try {
       if (authApi.hasAccessToken()) {
-        await this.loadCurrentUser({ silent: true });
+        await this.loadCurrentUser();
       }
     } finally {
       runInAction(() => {
@@ -42,11 +42,14 @@ export class UserStore {
     }
   }
 
-  async loadCurrentUser(options: { silent?: boolean } = {}): Promise<boolean> {
-    const { silent = false } = options;
+  async loadCurrentUser(): Promise<boolean> {
+    const isFirstLoad = !this.currentUser;
 
     try {
-      const currentUser = await authApi.me();
+      const currentUser = await authApi.me({
+        level: "blocking",
+        silent: !isFirstLoad,
+      });
 
       runInAction(() => {
         this.currentUser = currentUser;
@@ -64,7 +67,7 @@ export class UserStore {
         return false;
       }
 
-      if (!silent) {
+      if (isFirstLoad) {
         errorStore.pushFromUnknown(error, "Не удалось загрузить пользователя");
       }
 

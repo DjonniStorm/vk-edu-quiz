@@ -1,28 +1,120 @@
-import { LANG_KEYS, type LangKey } from "./keys";
+import type { Translation } from "./en";
 
-export const ru: Record<LangKey, string> = {
-  [LANG_KEYS.APP_NAME]: "VK Education Quiz",
-  [LANG_KEYS.COMMON_LOADING]: "Загрузка...",
-  [LANG_KEYS.COMMON_ERROR]: "Ошибка",
-  [LANG_KEYS.COMMON_RETRY]: "Повторить",
-  [LANG_KEYS.COMMON_SAVE]: "Сохранить",
-  [LANG_KEYS.COMMON_CANCEL]: "Отмена",
-  [LANG_KEYS.COMMON_DELETE]: "Удалить",
-  [LANG_KEYS.COMMON_BACK]: "Назад",
-  [LANG_KEYS.COMMON_NEXT]: "Далее",
-  [LANG_KEYS.AUTH_LOGIN]: "Войти",
-  [LANG_KEYS.AUTH_REGISTER]: "Зарегистрироваться",
-  [LANG_KEYS.AUTH_LOGOUT]: "Выйти",
-  [LANG_KEYS.AUTH_EMAIL]: "Email",
-  [LANG_KEYS.AUTH_PASSWORD]: "Пароль",
-  [LANG_KEYS.AUTH_NAME]: "Имя",
-  [LANG_KEYS.ROLE_USER]: "Пользователь",
-  [LANG_KEYS.ROLE_ADMIN]: "Администратор",
-  [LANG_KEYS.QUIZZES_TITLE]: "Квизы",
-  [LANG_KEYS.QUIZZES_CREATE]: "Создать квиз",
-  [LANG_KEYS.QUIZZES_EMPTY]: "Квизов пока нет",
-  [LANG_KEYS.ROOMS_JOIN]: "Подключиться",
-  [LANG_KEYS.ROOMS_START]: "Запустить",
-  [LANG_KEYS.ROOMS_FINISH]: "Завершить",
-  [LANG_KEYS.ROOMS_LEADERBOARD]: "Лидерборд",
+export const ru: Translation = {
+  app: {
+    name: "VK Education Quiz",
+  },
+  common: {
+    loading: "Загрузка...",
+    error: "Ошибка",
+    retry: "Повторить",
+    save: "Сохранить",
+    cancel: "Отмена",
+    delete: "Удалить",
+    back: "Назад",
+    next: "Далее",
+  },
+  auth: {
+    login: "Войти",
+    register: "Зарегистрироваться",
+    logout: "Выйти",
+    fields: {
+      email: "Email",
+      password: "Пароль",
+      name: "Имя",
+    },
+    placeholders: {
+      email: "user@example.com",
+      password: "Пароль",
+      name: "Алекс О.",
+    },
+  },
+  roles: {
+    user: "Пользователь",
+    admin: "Администратор",
+  },
+  pages: {
+    login: {
+      title: "Вход",
+      subtitle: "Войдите в аккаунт, чтобы открыть панель организатора.",
+      footerText: "Ещё нет аккаунта?",
+      footerLinkText: "Создать",
+      submit: "Войти",
+    },
+    register: {
+      title: "Создание аккаунта",
+      subtitle: "Зарегистрируйтесь, чтобы создавать квизы и проводить сессии.",
+      footerText: "Уже есть аккаунт?",
+      footerLinkText: "Войти",
+      submit: "Создать аккаунт",
+    },
+    organizerDashboard: {
+      title: "Панель организатора",
+      groupTitle: "Мои квизы",
+      groupSubtitle: "Недавние квизы и активные комнаты",
+      viewAll: "Смотреть все",
+      stats: {
+        totalQuizzes: {
+          label: "Всего квизов",
+          trend: "+2 за месяц",
+        },
+        completedSessions: {
+          label: "Завершённые сессии",
+          trend: "+15% к прошлому месяцу",
+        },
+        participants: {
+          label: "Участники",
+          trend: "+124 новых",
+        },
+        averageScore: {
+          label: "Средний балл",
+          trend: "Стабильно",
+        },
+      },
+    },
+  },
+  layout: {
+    app: {
+      brand: "QuizRoom",
+      bell: "Уведомления",
+      createQuiz: "+ Создать квиз",
+      exit: "Выйти",
+      fallbackUser: "Пользователь",
+      nav: {
+        dashboard: "Дашборд",
+        myQuizzes: "Мои квизы",
+        createQuiz: "Создать квиз",
+        activeRooms: "Активные комнаты",
+        results: "Результаты",
+      },
+    },
+  },
+  quizzes: {
+    title: "Квизы",
+    create: "Создать квиз",
+    empty: "Квизов пока нет",
+    status: {
+      active: "Активен",
+      draft: "Черновик",
+      published: "Готов",
+    },
+    actions: {
+      finish: "Завершить",
+      room: "Комната",
+      continue: "Продолжить",
+      start: "Запустить",
+      edit: "Редактировать",
+      results: "Результаты",
+    },
+    meta: {
+      questions: "{{count}} вопросов",
+      minutes: "{{count}} мин",
+    },
+  },
+  rooms: {
+    join: "Подключиться",
+    start: "Запустить",
+    finish: "Завершить",
+    leaderboard: "Лидерборд",
+  },
 };

@@ -2,6 +2,7 @@ import type { AuthResponseDto, CurrentUserDto } from "@quiz/shared";
 
 import { BaseApi } from "../base-api";
 import { authTokenStorage } from "../http-client";
+import type { RequestMeta } from "../loader.store";
 
 export interface LoginInput {
   email: string;
@@ -55,9 +56,9 @@ class AuthApi extends BaseApi {
     return data;
   }
 
-  async me(): Promise<CurrentUserDto> {
+  async me(meta?: Partial<RequestMeta>): Promise<CurrentUserDto> {
     const { data } = await this.get<MeResponseDto>("/me", {
-      meta: { silent: true, scope: AUTH_SCOPE },
+      meta: { silent: true, scope: AUTH_SCOPE, ...meta },
     });
 
     return data.user;

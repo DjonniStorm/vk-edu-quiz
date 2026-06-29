@@ -1,4 +1,3 @@
-import { Center, Loader } from "@mantine/core";
 import { observer } from "mobx-react-lite";
 import { useEffect, type PropsWithChildren } from "react";
 import { Navigate, useLocation } from "react-router";
@@ -13,12 +12,10 @@ export const ProtectedRoute = observer(({ children }: PropsWithChildren) => {
     void userStore.initialize();
   }, []);
 
+  // Во время первой инициализации визуал даёт глобальный blocking overlay (me() level: "blocking"),
+  // поэтому здесь не рисуем второй лоадер, а просто блокируем рендер защищённого контента.
   if (!userStore.isInitialized || userStore.isInitializing) {
-    return (
-      <Center h="100vh">
-        <Loader />
-      </Center>
-    );
+    return null;
   }
 
   if (!userStore.isAuthenticated) {

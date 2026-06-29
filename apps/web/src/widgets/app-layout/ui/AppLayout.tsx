@@ -18,14 +18,6 @@ import { useTranslation } from "react-i18next";
 import { LANG_KEYS } from "@/app/i18n";
 import { userStore } from "@/entities/user";
 
-const navItems = [
-  { label: "Dashboard", marker: "01" },
-  { label: "My quizzes", marker: "02" },
-  { label: "Create quiz", marker: "03" },
-  { label: "Active rooms", marker: "04" },
-  { label: "Results", marker: "05" },
-];
-
 export interface AppLayoutProps extends PropsWithChildren {
   title: string;
 }
@@ -34,7 +26,14 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
   const { t } = useTranslation();
   const currentUser = userStore.currentUser;
   const roleLabel =
-    currentUser?.role === UserRole.Admin ? t(LANG_KEYS.ROLE_ADMIN) : t(LANG_KEYS.ROLE_USER);
+    currentUser?.role === UserRole.Admin ? t(LANG_KEYS.roles.admin) : t(LANG_KEYS.roles.user);
+  const navItems = [
+    { label: t(LANG_KEYS.layout.app.nav.dashboard), marker: "01" },
+    { label: t(LANG_KEYS.layout.app.nav.myQuizzes), marker: "02" },
+    { label: t(LANG_KEYS.layout.app.nav.createQuiz), marker: "03" },
+    { label: t(LANG_KEYS.layout.app.nav.activeRooms), marker: "04" },
+    { label: t(LANG_KEYS.layout.app.nav.results), marker: "05" },
+  ];
   const userInitials = currentUser?.name
     .split(" ")
     .map((part) => part[0])
@@ -58,9 +57,9 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
           <Title order={4}>{title}</Title>
           <Group gap="md">
             <Button variant="subtle" color="gray" px="xs">
-              Bell
+              {t(LANG_KEYS.layout.app.bell)}
             </Button>
-            <Button>+ Create quiz</Button>
+            <Button>{t(LANG_KEYS.layout.app.createQuiz)}</Button>
           </Group>
         </Group>
       </AppShell.Header>
@@ -82,13 +81,13 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
             >
               Q
             </Box>
-            <Text fw={700}>QuizRoom</Text>
+            <Text fw={700}>{t(LANG_KEYS.layout.app.brand)}</Text>
           </Group>
 
           <Stack gap={4} px="sm" py="lg">
             {navItems.map((item, index) => (
               <UnstyledButton
-                key={item.label}
+                key={item.marker}
                 px="md"
                 py="sm"
                 style={{
@@ -118,7 +117,7 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
                 </Avatar>
                 <Box>
                   <Text size="sm" fw={700} lineClamp={1}>
-                    {currentUser?.name ?? "User"}
+                    {currentUser?.name ?? t(LANG_KEYS.layout.app.fallbackUser)}
                   </Text>
                   <Text size="xs" c="dimmed">
                     {roleLabel}
@@ -126,7 +125,7 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
                 </Box>
               </Group>
               <Button variant="subtle" color="gray" px="xs">
-                Exit
+                {t(LANG_KEYS.layout.app.exit)}
               </Button>
             </Group>
           </Box>

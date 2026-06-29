@@ -2,9 +2,9 @@ export type DashboardQuizStatus = "active" | "draft" | "published";
 
 export interface DashboardStatDto {
   id: string;
-  label: string;
   value: string;
-  trend: string;
+  label?: string;
+  trend?: string;
 }
 
 export interface DashboardQuizDto {
@@ -24,10 +24,10 @@ export interface OrganizerDashboardDto {
 
 const mockedDashboard: OrganizerDashboardDto = {
   stats: [
-    { id: "total-quizzes", label: "Total quizzes", value: "12", trend: "+2 this month" },
-    { id: "completed-sessions", label: "Completed sessions", value: "48", trend: "+15% vs last month" },
-    { id: "participants", label: "Participants", value: "856", trend: "+124 new" },
-    { id: "average-score", label: "Average score", value: "74%", trend: "Stable" },
+    { id: "total-quizzes", value: "12" },
+    { id: "completed-sessions", value: "48" },
+    { id: "participants", value: "856" },
+    { id: "average-score", value: "74%" },
   ],
   quizzes: [
     {

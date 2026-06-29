@@ -1,4 +1,4 @@
-import { Loader, Overlay } from "@mantine/core";
+import { Loader, Overlay, Portal } from "@mantine/core";
 import { NavigationProgress, nprogress } from "@mantine/nprogress";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
@@ -50,9 +50,11 @@ export const AppLoader = observer(() => {
     <>
       <NavigationProgress />
       {overlayVisible ? (
-        <Overlay fixed zIndex={1000} backgroundOpacity={0.35} blur={2} center>
-          <Loader />
-        </Overlay>
+        <Portal>
+          <Overlay fixed zIndex={1000} backgroundOpacity={0.35} blur={2} center>
+            <Loader />
+          </Overlay>
+        </Portal>
       ) : null}
     </>
   );

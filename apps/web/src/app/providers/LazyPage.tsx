@@ -1,4 +1,4 @@
-import { Loader } from "@mantine/core";
+import { Center, Loader } from "@mantine/core";
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 
@@ -8,7 +8,7 @@ interface LazyPageProps {
 
 export const LazyPage = ({ children }: LazyPageProps) => {
   return (
-    <Suspense fallback={<Loader />}>
+    <Suspense fallback={<Center h="100vh"><Loader /></Center>}>
       {children}
     </Suspense>
   );

@@ -54,12 +54,11 @@ i18n
     lng: getInitialLanguage(),
     fallbackLng: defaultLanguage,
     supportedLngs: supportedLanguages,
-    keySeparator: false,
     returnNull: false,
     interpolation: {
       escapeValue: false,
     },
   });
 
-export { LANG_KEYS } from "./keys";
+export { LANG_KEYS, DASHBOARD_STAT_KEYS } from "./keys";
 export default i18n;

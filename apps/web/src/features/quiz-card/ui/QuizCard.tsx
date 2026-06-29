@@ -1,16 +1,12 @@
 import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { useTranslation } from "react-i18next";
 
+import { LANG_KEYS } from "@/app/i18n";
 import type { DashboardQuizDto, DashboardQuizStatus } from "@/shared/services";
 
 export interface QuizCardProps {
   quiz: DashboardQuizDto;
 }
-
-const statusLabel: Record<DashboardQuizStatus, string> = {
-  active: "Active",
-  draft: "Draft",
-  published: "Ready",
-};
 
 const statusColor: Record<DashboardQuizStatus, string> = {
   active: "blue",
@@ -19,6 +15,9 @@ const statusColor: Record<DashboardQuizStatus, string> = {
 };
 
 export const QuizCard = ({ quiz }: QuizCardProps) => {
+  const { t } = useTranslation();
+  const statusLabel = t(LANG_KEYS.quizzes.status[quiz.status]);
+
   return (
     <Card radius="md" withBorder padding={0}>
       <Stack gap="md" p="lg" flex={1}>
@@ -27,7 +26,7 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
             {quiz.category}
           </Badge>
           <Badge color={statusColor[quiz.status]} variant="light">
-            {statusLabel[quiz.status]}
+            {statusLabel}
           </Badge>
         </Group>
 
@@ -39,8 +38,12 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
         </Stack>
 
         <Group gap="lg" mt="auto">
-          <Text size="sm">{quiz.questionsCount} questions</Text>
-          <Text size="sm">{quiz.durationMinutes} min</Text>
+          <Text size="sm">
+            {t(LANG_KEYS.quizzes.meta.questions, { count: quiz.questionsCount })}
+          </Text>
+          <Text size="sm">
+            {t(LANG_KEYS.quizzes.meta.minutes, { count: quiz.durationMinutes })}
+          </Text>
         </Group>
       </Stack>
 
@@ -48,22 +51,22 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
         {quiz.status === "active" ? (
           <>
             <Button color="red" variant="subtle">
-              Finish
+              {t(LANG_KEYS.quizzes.actions.finish)}
             </Button>
-            <Button>Room</Button>
+            <Button>{t(LANG_KEYS.quizzes.actions.room)}</Button>
           </>
         ) : quiz.status === "draft" ? (
           <>
-            <Button variant="default">Continue</Button>
-            <Button disabled>Start</Button>
+            <Button variant="default">{t(LANG_KEYS.quizzes.actions.continue)}</Button>
+            <Button disabled>{t(LANG_KEYS.quizzes.actions.start)}</Button>
           </>
         ) : (
           <>
             <Group gap="xs">
-              <Button variant="default">Edit</Button>
-              <Button variant="subtle">Results</Button>
+              <Button variant="default">{t(LANG_KEYS.quizzes.actions.edit)}</Button>
+              <Button variant="subtle">{t(LANG_KEYS.quizzes.actions.results)}</Button>
             </Group>
-            <Button>Start</Button>
+            <Button>{t(LANG_KEYS.quizzes.actions.start)}</Button>
           </>
         )}
       </Group>

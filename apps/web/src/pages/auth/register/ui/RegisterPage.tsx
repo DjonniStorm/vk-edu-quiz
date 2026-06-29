@@ -1,15 +1,20 @@
+import { useTranslation } from "react-i18next";
+
+import { LANG_KEYS } from "@/app/i18n";
 import { ROUTES } from "@/app/routes";
 import { AuthLayout } from "@/widgets/auth-layout";
 
 import { RegisterForm } from "./RegisterForm";
 
 export const RegisterPage = () => {
+  const { t } = useTranslation();
+
   return (
     <AuthLayout
-      title="Create account"
-      subtitle="Sign up to create quizzes and run live sessions."
-      footerText="Already have an account?"
-      footerLinkText="Log in"
+      title={t(LANG_KEYS.pages.register.title)}
+      subtitle={t(LANG_KEYS.pages.register.subtitle)}
+      footerText={t(LANG_KEYS.pages.register.footerText)}
+      footerLinkText={t(LANG_KEYS.pages.register.footerLinkText)}
       footerLinkTo={ROUTES.login}
     >
       <RegisterForm />
