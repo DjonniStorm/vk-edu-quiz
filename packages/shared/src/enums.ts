@@ -1,6 +1,11 @@
 export enum UserRole {
-  Organizer = "ORGANIZER",
-  Participant = "PARTICIPANT",
+  User = "USER",
+  Admin = "ADMIN",
+}
+
+export enum SessionRole {
+  Organizer = "organizer",
+  Participant = "participant",
 }
 
 export enum QuizStatus {

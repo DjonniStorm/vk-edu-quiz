@@ -1,3 +1,4 @@
+import { cors } from "@elysiajs/cors";
 import { Elysia } from "elysia";
 import { ZodError } from "zod";
 
@@ -15,6 +16,11 @@ export const createApp = (env: EnvConfig) => {
   });
 
   return new Elysia()
+    .use(
+      cors({
+        origin: "*",
+      }),
+    )
     .use(swaggerDocs())
     .onError(({ error, set }) => {
       if (error instanceof AppError) {

@@ -7,7 +7,6 @@ import {
   disconnectTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestEmail } from "../../../core/testing/test-ids";
-import { AnswerMode, UserRole } from "../../../generated/prisma/enums";
 
 const app = createApp(getEnv());
 const createdEmails: string[] = [];
@@ -27,16 +26,15 @@ const jsonRequest = (
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-const registerOrganizer = async () => {
-  const email = createTestEmail("quiz-routes");
+const registerUser = async (prefix: string) => {
+  const email = createTestEmail(prefix);
   createdEmails.push(email);
 
   const response = await app.handle(
     jsonRequest("POST", "/auth/register", {
       email,
       password: "password-123",
-      name: "Quiz Owner",
-      role: UserRole.ORGANIZER,
+      name: "Quiz User",
     }),
   );
   const body = await response.json();
@@ -45,23 +43,6 @@ const registerOrganizer = async () => {
     email,
     token: body.tokens.accessToken as string,
   };
-};
-
-const registerParticipant = async () => {
-  const email = createTestEmail("quiz-routes-participant");
-  createdEmails.push(email);
-
-  const response = await app.handle(
-    jsonRequest("POST", "/auth/register", {
-      email,
-      password: "password-123",
-      name: "Quiz Participant",
-      role: UserRole.PARTICIPANT,
-    }),
-  );
-  const body = await response.json();
-
-  return body.tokens.accessToken as string;
 };
 
 afterEach(async () => {
@@ -82,18 +63,19 @@ describe("quiz routes", () => {
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
-  it("запрещает участнику управлять квизами", async () => {
-    const token = await registerParticipant();
+  it("позволяет любому User управлять своими квизами", async () => {
+    const { token } = await registerUser("quiz-routes-user");
 
     const response = await app.handle(jsonRequest("GET", "/quizzes", undefined, token));
     const body = await response.json();
 
-    expect(response.status).toBe(403);
-    expect(body.error.code).toBe("FORBIDDEN");
+    expect(response.status).toBe(200);
+    expect(body.items).toEqual([]);
+    expect(body.total).toBe(0);
   });
 
   it("создаёт, получает, обновляет и удаляет квиз через HTTP", async () => {
-    const { token } = await registerOrganizer();
+    const { token } = await registerUser("quiz-routes-owner");
 
     const createResponse = await app.handle(
       jsonRequest(
@@ -105,7 +87,7 @@ describe("quiz routes", () => {
           questions: [
             {
               text: "Сколько будет 2 + 2?",
-              answerMode: AnswerMode.SINGLE,
+              answerMode: "SINGLE",
               orderIndex: 0,
               timeLimitSec: 30,
               points: 10,
@@ -162,7 +144,7 @@ describe("quiz routes", () => {
   });
 
   it("возвращает ошибку валидации для некорректного payload", async () => {
-    const { token } = await registerOrganizer();
+    const { token } = await registerUser("quiz-routes-validation");
 
     const response = await app.handle(
       jsonRequest("POST", "/quizzes", { title: "" }, token),

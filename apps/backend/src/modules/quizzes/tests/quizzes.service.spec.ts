@@ -7,7 +7,7 @@ import {
   getTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestUser } from "../../../core/testing/test-users";
-import { AnswerMode, QuizStatus, UserRole } from "../../../generated/prisma/enums";
+import { AnswerMode, QuizStatus } from "../../../generated/prisma/enums";
 import type { QuestionInput } from "../quizzes.interfaces";
 import { QuizServiceImpl } from "../quizzes.service";
 
@@ -16,7 +16,7 @@ const createdEmails: string[] = [];
 const createQuizService = () => new QuizServiceImpl(getTestPrismaClient());
 
 const createOwner = async (prefix: string) => {
-  const user = await createTestUser(prefix, UserRole.ORGANIZER);
+  const user = await createTestUser(prefix);
 
   createdEmails.push(user.email);
 

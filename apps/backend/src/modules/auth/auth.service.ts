@@ -1,6 +1,7 @@
 import { ConflictError, UnauthorizedError } from "../../core/errors";
 import type { CurrentUser, EntityId } from "../../core/types";
 import type { PrismaClient } from "../../generated/prisma/client";
+import { UserRole } from "../../generated/prisma/enums";
 import type { AuthTokenService } from "../../plugins/auth.interface";
 import type {
   AuthResult,
@@ -31,7 +32,7 @@ export class AuthServiceImpl implements AuthService {
         email,
         passwordHash,
         name: input.name.trim(),
-        role: input.role,
+        role: UserRole.User,
       },
       select: { id: true, email: true, name: true, role: true },
     });

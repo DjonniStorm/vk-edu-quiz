@@ -42,13 +42,12 @@ describe("AuthServiceImpl", () => {
       email: `  ${email.toUpperCase()}  `,
       password,
       name: "  Test User  ",
-      role: UserRole.ORGANIZER,
     });
 
     expect(result.user).toMatchObject({
       email,
       name: "Test User",
-      role: UserRole.ORGANIZER,
+      role: UserRole.User,
     });
     expect(result.tokens.accessToken).toEqual(expect.any(String));
 
@@ -71,7 +70,6 @@ describe("AuthServiceImpl", () => {
       email,
       password: "password-123",
       name: "Test User",
-      role: UserRole.PARTICIPANT,
     });
 
     await expect(
@@ -79,7 +77,6 @@ describe("AuthServiceImpl", () => {
         email: email.toUpperCase(),
         password: "password-456",
         name: "Another User",
-        role: UserRole.PARTICIPANT,
       }),
     ).rejects.toBeInstanceOf(ConflictError);
   });
@@ -95,7 +92,6 @@ describe("AuthServiceImpl", () => {
       email,
       password,
       name: "Login User",
-      role: UserRole.PARTICIPANT,
     });
 
     const loginResult = await authService.login({

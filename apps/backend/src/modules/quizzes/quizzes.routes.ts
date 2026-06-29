@@ -1,8 +1,7 @@
 import { Elysia } from "elysia";
 
-import { UserRole } from "../../generated/prisma/enums";
 import type { AuthContextProvider } from "../../plugins/auth.interface";
-import { requireRole } from "../../plugins/auth-guards";
+import { requireCurrentUser } from "../../plugins/auth-guards";
 import type { QuizService } from "./quizzes.interfaces";
 import {
   createQuizSchema,
@@ -19,11 +18,7 @@ export interface QuizRoutesDeps {
 export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoutesDeps) =>
   new Elysia({ prefix: "/quizzes" })
     .get("/", async ({ headers, query }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return quizService.listOwnerQuizzes(currentUser.id, paginationQuerySchema.parse(query));
     }, {
@@ -34,11 +29,7 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
       },
     })
     .post("/", async ({ headers, body }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return quizService.createQuiz(currentUser.id, createQuizSchema.parse(body));
     }, {
@@ -49,11 +40,7 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
       },
     })
     .get("/:quizId", async ({ headers, params }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return quizService.getOwnerQuiz(currentUser.id, params.quizId);
     }, {
@@ -64,11 +51,7 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
       },
     })
     .patch("/:quizId", async ({ headers, params, body }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return quizService.updateQuiz(currentUser.id, params.quizId, updateQuizSchema.parse(body));
     }, {
@@ -79,11 +62,7 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
       },
     })
     .delete("/:quizId", async ({ headers, params }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       await quizService.deleteQuiz(currentUser.id, params.quizId);
 
@@ -96,11 +75,7 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
       },
     })
     .put("/:quizId/questions", async ({ headers, params, body }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
       const input = replaceQuestionsSchema.parse(body);
 
       return quizService.replaceQuestions(currentUser.id, params.quizId, input.questions);

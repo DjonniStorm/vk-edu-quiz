@@ -41,7 +41,6 @@ describe("auth routes", () => {
         email,
         password: "password-123",
         name: "Route User",
-        role: UserRole.ORGANIZER,
       }),
     );
     const body = await response.json();
@@ -50,7 +49,7 @@ describe("auth routes", () => {
     expect(body.user).toMatchObject({
       email,
       name: "Route User",
-      role: UserRole.ORGANIZER,
+      role: UserRole.User,
     });
     expect(body.tokens.accessToken).toEqual(expect.any(String));
   });
@@ -64,7 +63,6 @@ describe("auth routes", () => {
         email,
         password: "password-123",
         name: "Route User",
-        role: UserRole.PARTICIPANT,
       }),
     );
 
@@ -73,7 +71,6 @@ describe("auth routes", () => {
         email,
         password: "password-456",
         name: "Another User",
-        role: UserRole.PARTICIPANT,
       }),
     );
     const body = await response.json();
@@ -91,7 +88,6 @@ describe("auth routes", () => {
         email,
         password: "password-123",
         name: "Route User",
-        role: UserRole.PARTICIPANT,
       }),
     );
 
@@ -117,7 +113,6 @@ describe("auth routes", () => {
         email,
         password: "password-123",
         name: "Route User",
-        role: UserRole.ORGANIZER,
       }),
     );
     const registerBody = await registerResponse.json();
@@ -128,7 +123,7 @@ describe("auth routes", () => {
     expect(response.status).toBe(200);
     expect(body.user).toMatchObject({
       email,
-      role: UserRole.ORGANIZER,
+      role: UserRole.User,
     });
   });
 

@@ -1,8 +1,7 @@
 import { Elysia } from "elysia";
 
-import { UserRole } from "../../generated/prisma/enums";
 import type { AuthContextProvider } from "../../plugins/auth.interface";
-import { requireRole } from "../../plugins/auth-guards";
+import { requireCurrentUser } from "../../plugins/auth-guards";
 import type { HistoryService } from "./history.interfaces";
 import { historyPaginationQuerySchema } from "./history.schemas";
 
@@ -14,11 +13,7 @@ export interface HistoryRoutesDeps {
 export const createHistoryRoutes = ({ historyService, authContextProvider }: HistoryRoutesDeps) =>
   new Elysia({ prefix: "/history" })
     .get("/participant", async ({ headers, query }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.PARTICIPANT,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return historyService.listParticipantHistory(
         currentUser.id,
@@ -32,11 +27,7 @@ export const createHistoryRoutes = ({ historyService, authContextProvider }: His
       },
     })
     .get("/organizer", async ({ headers, query }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return historyService.listOrganizerHistory(
         currentUser.id,
@@ -50,11 +41,7 @@ export const createHistoryRoutes = ({ historyService, authContextProvider }: His
       },
     })
     .get("/rooms/:roomId/results", async ({ headers, params }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return historyService.getRoomResults(currentUser.id, params.roomId);
     }, {

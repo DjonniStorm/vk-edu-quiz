@@ -7,7 +7,7 @@ import {
   getTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestUser } from "../../../core/testing/test-users";
-import { AnswerMode, ParticipantStatus, RoomStatus, UserRole } from "../../../generated/prisma/enums";
+import { AnswerMode, ParticipantStatus, RoomStatus } from "../../../generated/prisma/enums";
 import {
   RealtimeEventType,
   type RealtimeClient,
@@ -51,7 +51,7 @@ const createRoomService = () => {
 const createQuizService = () => new QuizServiceImpl(getTestPrismaClient());
 
 const createOrganizer = async (prefix: string) => {
-  const user = await createTestUser(prefix, UserRole.ORGANIZER);
+  const user = await createTestUser(prefix);
 
   createdEmails.push(user.email);
 
@@ -59,7 +59,7 @@ const createOrganizer = async (prefix: string) => {
 };
 
 const createParticipant = async (prefix: string) => {
-  const user = await createTestUser(prefix, UserRole.PARTICIPANT);
+  const user = await createTestUser(prefix);
 
   createdEmails.push(user.email);
 

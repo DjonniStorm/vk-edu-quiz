@@ -1,10 +1,9 @@
-import type { AppUserRole, CurrentUser, EntityId } from "../../core/types";
+import type { CurrentUser, EntityId } from "../../core/types";
 
 export interface RegisterUserInput {
   email: string;
   password: string;
   name: string;
-  role: AppUserRole;
 }
 
 export interface LoginUserInput {

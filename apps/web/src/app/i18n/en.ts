@@ -1,0 +1,28 @@
+import { LANG_KEYS, type LangKey } from "./keys";
+
+export const en: Record<LangKey, string> = {
+  [LANG_KEYS.APP_NAME]: "VK Education Quiz",
+  [LANG_KEYS.COMMON_LOADING]: "Loading...",
+  [LANG_KEYS.COMMON_ERROR]: "Error",
+  [LANG_KEYS.COMMON_RETRY]: "Retry",
+  [LANG_KEYS.COMMON_SAVE]: "Save",
+  [LANG_KEYS.COMMON_CANCEL]: "Cancel",
+  [LANG_KEYS.COMMON_DELETE]: "Delete",
+  [LANG_KEYS.COMMON_BACK]: "Back",
+  [LANG_KEYS.COMMON_NEXT]: "Next",
+  [LANG_KEYS.AUTH_LOGIN]: "Log in",
+  [LANG_KEYS.AUTH_REGISTER]: "Sign up",
+  [LANG_KEYS.AUTH_LOGOUT]: "Log out",
+  [LANG_KEYS.AUTH_EMAIL]: "Email",
+  [LANG_KEYS.AUTH_PASSWORD]: "Password",
+  [LANG_KEYS.AUTH_NAME]: "Name",
+  [LANG_KEYS.ROLE_USER]: "User",
+  [LANG_KEYS.ROLE_ADMIN]: "Admin",
+  [LANG_KEYS.QUIZZES_TITLE]: "Quizzes",
+  [LANG_KEYS.QUIZZES_CREATE]: "Create quiz",
+  [LANG_KEYS.QUIZZES_EMPTY]: "No quizzes yet",
+  [LANG_KEYS.ROOMS_JOIN]: "Join",
+  [LANG_KEYS.ROOMS_START]: "Start",
+  [LANG_KEYS.ROOMS_FINISH]: "Finish",
+  [LANG_KEYS.ROOMS_LEADERBOARD]: "Leaderboard",
+};

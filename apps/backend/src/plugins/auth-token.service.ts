@@ -8,7 +8,7 @@ import type { AuthTokenPayload, AuthTokenService } from "./auth.interface";
 const tokenPayloadSchema = z.object({
   sub: z.string().uuid(),
   email: z.string().email(),
-  role: z.enum([UserRole.ORGANIZER, UserRole.PARTICIPANT]),
+  role: z.enum([UserRole.User, UserRole.Admin]),
 });
 
 export class JwtAuthTokenService implements AuthTokenService {

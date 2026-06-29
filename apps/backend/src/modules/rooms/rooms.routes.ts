@@ -1,8 +1,7 @@
 import { Elysia } from "elysia";
 
-import { UserRole } from "../../generated/prisma/enums";
 import type { AuthContextProvider } from "../../plugins/auth.interface";
-import { requireRole } from "../../plugins/auth-guards";
+import { requireCurrentUser } from "../../plugins/auth-guards";
 import type { RoomService } from "./rooms.interfaces";
 import {
   createRoomSchema,
@@ -20,11 +19,7 @@ export interface RoomRoutesDeps {
 export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoutesDeps) =>
   new Elysia({ prefix: "/rooms" })
     .post("/", async ({ headers, body }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return roomService.createRoom(currentUser.id, createRoomSchema.parse(body));
     }, {
@@ -44,7 +39,7 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
     .post("/:roomId/join", async ({ headers, params, body }) => {
       const input = joinRoomSchema.parse(body);
       const currentUser = headers.authorization
-        ? await requireRole(authContextProvider, headers.authorization, UserRole.PARTICIPANT)
+        ? await requireCurrentUser(authContextProvider, headers.authorization)
         : null;
 
       return roomService.joinRoom(params.roomId, {
@@ -55,7 +50,7 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
       detail: {
         tags: ["Rooms"],
         summary: "Join room",
-        description: "Guest users may join without token. Authorized joins require PARTICIPANT role.",
+        description: "Guest users may join without token. Authorized joins link the account userId.",
       },
     })
     .post("/:roomId/leave", async ({ body }) => {
@@ -71,11 +66,7 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
       },
     })
     .post("/:roomId/start", async ({ headers, params }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return roomService.startRoom(currentUser.id, params.roomId);
     }, {
@@ -86,11 +77,7 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
       },
     })
     .post("/:roomId/questions/show", async ({ headers, params, body }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
       const input = showQuestionSchema.parse(body);
 
       return roomService.showQuestion(currentUser.id, params.roomId, input.questionId);
@@ -118,11 +105,7 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
       },
     })
     .post("/:roomId/finish", async ({ headers, params }) => {
-      const currentUser = await requireRole(
-        authContextProvider,
-        headers.authorization,
-        UserRole.ORGANIZER,
-      );
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
       return roomService.finishRoom(currentUser.id, params.roomId);
     }, {

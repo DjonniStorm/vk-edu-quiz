@@ -7,7 +7,7 @@ import {
   disconnectTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestEmail } from "../../../core/testing/test-ids";
-import { AnswerMode, RoomStatus, UserRole } from "../../../generated/prisma/enums";
+import { AnswerMode, RoomStatus } from "../../../generated/prisma/enums";
 
 const app = createApp(getEnv());
 const createdEmails: string[] = [];
@@ -27,33 +27,15 @@ const jsonRequest = (
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-const registerOrganizer = async () => {
-  const email = createTestEmail("room-routes");
+const registerUser = async (prefix: string) => {
+  const email = createTestEmail(prefix);
   createdEmails.push(email);
 
   const response = await app.handle(
     jsonRequest("POST", "/auth/register", {
       email,
       password: "password-123",
-      name: "Room Owner",
-      role: UserRole.ORGANIZER,
-    }),
-  );
-  const body = await response.json();
-
-  return body.tokens.accessToken as string;
-};
-
-const registerParticipant = async () => {
-  const email = createTestEmail("room-routes-participant");
-  createdEmails.push(email);
-
-  const response = await app.handle(
-    jsonRequest("POST", "/auth/register", {
-      email,
-      password: "password-123",
-      name: "Room Participant",
-      role: UserRole.PARTICIPANT,
+      name: "Room User",
     }),
   );
   const body = await response.json();
@@ -83,25 +65,31 @@ describe("room routes", () => {
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
-  it("запрещает участнику создавать комнату", async () => {
-    const token = await registerParticipant();
+  it("возвращает 404 при создании комнаты для чужого квиза", async () => {
+    const ownerToken = await registerUser("room-routes-owner");
+    const anotherToken = await registerUser("room-routes-another");
 
-    const response = await app.handle(
+    const createQuizResponse = await app.handle(
       jsonRequest(
         "POST",
-        "/rooms",
-        { quizId: "00000000-0000-0000-0000-000000000000" },
-        token,
+        "/quizzes",
+        { title: "Чужой квиз" },
+        ownerToken,
       ),
+    );
+    const quiz = await createQuizResponse.json();
+
+    const response = await app.handle(
+      jsonRequest("POST", "/rooms", { quizId: quiz.id }, anotherToken),
     );
     const body = await response.json();
 
-    expect(response.status).toBe(403);
-    expect(body.error.code).toBe("FORBIDDEN");
+    expect(response.status).toBe(404);
+    expect(body.error.code).toBe("NOT_FOUND");
   });
 
   it("создает комнату и проводит live-сценарий через HTTP", async () => {
-    const token = await registerOrganizer();
+    const token = await registerUser("room-routes-live");
     const createQuizResponse = await app.handle(
       jsonRequest(
         "POST",

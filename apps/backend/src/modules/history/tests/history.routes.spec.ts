@@ -7,7 +7,7 @@ import {
   disconnectTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestEmail } from "../../../core/testing/test-ids";
-import { AnswerMode, UserRole } from "../../../generated/prisma/enums";
+import { AnswerMode } from "../../../generated/prisma/enums";
 
 const app = createApp(getEnv());
 const createdEmails: string[] = [];
@@ -27,7 +27,7 @@ const jsonRequest = (
     body: body === undefined ? undefined : JSON.stringify(body),
   });
 
-const registerUser = async (prefix: string, role: UserRole) => {
+const registerUser = async (prefix: string) => {
   const email = createTestEmail(prefix);
   createdEmails.push(email);
 
@@ -36,7 +36,6 @@ const registerUser = async (prefix: string, role: UserRole) => {
       email,
       password: "password-123",
       name: `${prefix} user`,
-      role,
     }),
   );
   const body = await response.json();
@@ -45,8 +44,8 @@ const registerUser = async (prefix: string, role: UserRole) => {
 };
 
 const createFinishedRoomByHttp = async () => {
-  const organizerToken = await registerUser("history-route-owner", UserRole.ORGANIZER);
-  const participantToken = await registerUser("history-route-participant", UserRole.PARTICIPANT);
+  const organizerToken = await registerUser("history-route-owner");
+  const participantToken = await registerUser("history-route-participant");
 
   const createQuizResponse = await app.handle(
     jsonRequest(
@@ -128,26 +127,23 @@ describe("history routes", () => {
     expect(body.error.code).toBe("UNAUTHORIZED");
   });
 
-  it("запрещает читать историю через чужую роль", async () => {
-    const organizerToken = await registerUser("history-route-role-owner", UserRole.ORGANIZER);
-    const participantToken = await registerUser(
-      "history-route-role-participant",
-      UserRole.PARTICIPANT,
-    );
+  it("возвращает только свои данные для каждого эндпоинта истории", async () => {
+    const organizerToken = await registerUser("history-route-organizer-only");
+    const participantToken = await registerUser("history-route-participant-only");
 
-    const participantHistoryResponse = await app.handle(
+    const organizerParticipantHistoryResponse = await app.handle(
       jsonRequest("GET", "/history/participant", undefined, organizerToken),
     );
-    const organizerHistoryResponse = await app.handle(
+    const participantOrganizerHistoryResponse = await app.handle(
       jsonRequest("GET", "/history/organizer", undefined, participantToken),
     );
-    const participantHistoryBody = await participantHistoryResponse.json();
-    const organizerHistoryBody = await organizerHistoryResponse.json();
+    const organizerParticipantHistory = await organizerParticipantHistoryResponse.json();
+    const participantOrganizerHistory = await participantOrganizerHistoryResponse.json();
 
-    expect(participantHistoryResponse.status).toBe(403);
-    expect(participantHistoryBody.error.code).toBe("FORBIDDEN");
-    expect(organizerHistoryResponse.status).toBe(403);
-    expect(organizerHistoryBody.error.code).toBe("FORBIDDEN");
+    expect(organizerParticipantHistoryResponse.status).toBe(200);
+    expect(organizerParticipantHistory.items).toEqual([]);
+    expect(participantOrganizerHistoryResponse.status).toBe(200);
+    expect(participantOrganizerHistory.items).toEqual([]);
   });
 
   it("возвращает историю участника, историю организатора и результаты комнаты", async () => {

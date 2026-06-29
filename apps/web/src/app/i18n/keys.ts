@@ -1,0 +1,28 @@
+export const LANG_KEYS = {
+  APP_NAME: "app.name",
+  COMMON_LOADING: "common.loading",
+  COMMON_ERROR: "common.error",
+  COMMON_RETRY: "common.retry",
+  COMMON_SAVE: "common.save",
+  COMMON_CANCEL: "common.cancel",
+  COMMON_DELETE: "common.delete",
+  COMMON_BACK: "common.back",
+  COMMON_NEXT: "common.next",
+  AUTH_LOGIN: "auth.login",
+  AUTH_REGISTER: "auth.register",
+  AUTH_LOGOUT: "auth.logout",
+  AUTH_EMAIL: "auth.email",
+  AUTH_PASSWORD: "auth.password",
+  AUTH_NAME: "auth.name",
+  ROLE_USER: "roles.user",
+  ROLE_ADMIN: "roles.admin",
+  QUIZZES_TITLE: "quizzes.title",
+  QUIZZES_CREATE: "quizzes.create",
+  QUIZZES_EMPTY: "quizzes.empty",
+  ROOMS_JOIN: "rooms.join",
+  ROOMS_START: "rooms.start",
+  ROOMS_FINISH: "rooms.finish",
+  ROOMS_LEADERBOARD: "rooms.leaderboard",
+} as const;
+
+export type LangKey = (typeof LANG_KEYS)[keyof typeof LANG_KEYS];

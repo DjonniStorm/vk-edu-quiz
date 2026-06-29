@@ -1,0 +1,28 @@
+import { LANG_KEYS, type LangKey } from "./keys";
+
+export const ru: Record<LangKey, string> = {
+  [LANG_KEYS.APP_NAME]: "VK Education Quiz",
+  [LANG_KEYS.COMMON_LOADING]: "Загрузка...",
+  [LANG_KEYS.COMMON_ERROR]: "Ошибка",
+  [LANG_KEYS.COMMON_RETRY]: "Повторить",
+  [LANG_KEYS.COMMON_SAVE]: "Сохранить",
+  [LANG_KEYS.COMMON_CANCEL]: "Отмена",
+  [LANG_KEYS.COMMON_DELETE]: "Удалить",
+  [LANG_KEYS.COMMON_BACK]: "Назад",
+  [LANG_KEYS.COMMON_NEXT]: "Далее",
+  [LANG_KEYS.AUTH_LOGIN]: "Войти",
+  [LANG_KEYS.AUTH_REGISTER]: "Зарегистрироваться",
+  [LANG_KEYS.AUTH_LOGOUT]: "Выйти",
+  [LANG_KEYS.AUTH_EMAIL]: "Email",
+  [LANG_KEYS.AUTH_PASSWORD]: "Пароль",
+  [LANG_KEYS.AUTH_NAME]: "Имя",
+  [LANG_KEYS.ROLE_USER]: "Пользователь",
+  [LANG_KEYS.ROLE_ADMIN]: "Администратор",
+  [LANG_KEYS.QUIZZES_TITLE]: "Квизы",
+  [LANG_KEYS.QUIZZES_CREATE]: "Создать квиз",
+  [LANG_KEYS.QUIZZES_EMPTY]: "Квизов пока нет",
+  [LANG_KEYS.ROOMS_JOIN]: "Подключиться",
+  [LANG_KEYS.ROOMS_START]: "Запустить",
+  [LANG_KEYS.ROOMS_FINISH]: "Завершить",
+  [LANG_KEYS.ROOMS_LEADERBOARD]: "Лидерборд",
+};

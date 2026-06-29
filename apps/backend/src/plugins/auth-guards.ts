@@ -1,5 +1,6 @@
 import { ForbiddenError, UnauthorizedError } from "../core/errors";
 import type { AppUserRole, CurrentUser } from "../core/types";
+import { UserRole } from "../generated/prisma/enums";
 import type { AuthContextProvider } from "./auth.interface";
 
 export const requireCurrentUser = async (
@@ -28,3 +29,8 @@ export const requireRole = async (
 
   return currentUser;
 };
+
+export const requireAdmin = (
+  authContextProvider: AuthContextProvider,
+  authorizationHeader: string | undefined,
+): Promise<CurrentUser> => requireRole(authContextProvider, authorizationHeader, UserRole.Admin);
