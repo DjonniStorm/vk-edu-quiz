@@ -14,25 +14,30 @@ import { observer } from "mobx-react-lite";
 import { UserRole } from "@quiz/shared";
 import type { PropsWithChildren } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { ROUTES } from "@/app/routes";
 import { userStore } from "@/entities/user";
+
+export type AppNavKey = "dashboard" | "myQuizzes" | "createQuiz" | "activeRooms" | "results";
 
 export interface AppLayoutProps extends PropsWithChildren {
   title: string;
+  activeNav?: AppNavKey;
 }
 
-export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
+export const AppLayout = observer(({ title, children, activeNav = "dashboard" }: AppLayoutProps) => {
   const { t } = useTranslation();
   const currentUser = userStore.currentUser;
   const roleLabel =
     currentUser?.role === UserRole.Admin ? t(LANG_KEYS.roles.admin) : t(LANG_KEYS.roles.user);
-  const navItems = [
-    { label: t(LANG_KEYS.layout.app.nav.dashboard), marker: "01" },
-    { label: t(LANG_KEYS.layout.app.nav.myQuizzes), marker: "02" },
-    { label: t(LANG_KEYS.layout.app.nav.createQuiz), marker: "03" },
-    { label: t(LANG_KEYS.layout.app.nav.activeRooms), marker: "04" },
-    { label: t(LANG_KEYS.layout.app.nav.results), marker: "05" },
+  const navItems: { key: AppNavKey; label: string; marker: string; to: string }[] = [
+    { key: "dashboard", label: t(LANG_KEYS.layout.app.nav.dashboard), marker: "01", to: ROUTES.main },
+    { key: "myQuizzes", label: t(LANG_KEYS.layout.app.nav.myQuizzes), marker: "02", to: ROUTES.main },
+    { key: "createQuiz", label: t(LANG_KEYS.layout.app.nav.createQuiz), marker: "03", to: ROUTES.quizCreate },
+    { key: "activeRooms", label: t(LANG_KEYS.layout.app.nav.activeRooms), marker: "04", to: ROUTES.main },
+    { key: "results", label: t(LANG_KEYS.layout.app.nav.results), marker: "05", to: ROUTES.main },
   ];
   const userInitials = currentUser?.name
     .split(" ")
@@ -59,7 +64,9 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
             <Button variant="subtle" color="gray" px="xs">
               {t(LANG_KEYS.layout.app.bell)}
             </Button>
-            <Button>{t(LANG_KEYS.layout.app.createQuiz)}</Button>
+            <Button component={Link} to={ROUTES.quizCreate}>
+              {t(LANG_KEYS.layout.app.createQuiz)}
+            </Button>
           </Group>
         </Group>
       </AppShell.Header>
@@ -85,27 +92,34 @@ export const AppLayout = observer(({ title, children }: AppLayoutProps) => {
           </Group>
 
           <Stack gap={4} px="sm" py="lg">
-            {navItems.map((item, index) => (
-              <UnstyledButton
-                key={item.marker}
-                px="md"
-                py="sm"
-                style={{
-                  borderRadius: 6,
-                  background: index === 0 ? "#e9efff" : "transparent",
-                  color: index === 0 ? "#1c4ed8" : "#1f2937",
-                }}
-              >
-                <Group gap="sm">
-                  <Text size="xs" fw={700}>
-                    {item.marker}
-                  </Text>
-                  <Text size="sm" fw={index === 0 ? 700 : 500}>
-                    {item.label}
-                  </Text>
-                </Group>
-              </UnstyledButton>
-            ))}
+            {navItems.map((item) => {
+              const isActive = item.key === activeNav;
+
+              return (
+                <UnstyledButton
+                  key={item.marker}
+                  component={Link}
+                  to={item.to}
+                  px="md"
+                  py="sm"
+                  style={{
+                    borderRadius: 6,
+                    background: isActive ? "#e9efff" : "transparent",
+                    color: isActive ? "#1c4ed8" : "#1f2937",
+                    textDecoration: "none",
+                  }}
+                >
+                  <Group gap="sm">
+                    <Text size="xs" fw={700}>
+                      {item.marker}
+                    </Text>
+                    <Text size="sm" fw={isActive ? 700 : 500}>
+                      {item.label}
+                    </Text>
+                  </Group>
+                </UnstyledButton>
+              );
+            })}
           </Stack>
 
           <Box mt="auto">

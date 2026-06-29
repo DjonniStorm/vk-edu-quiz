@@ -30,6 +30,14 @@ const RegisterPage = lazy(async () => {
   };
 });
 
+const QuizCreatePage = lazy(async () => {
+  const module = await import("@/pages/quiz-create");
+
+  return {
+    default: module.QuizCreatePage,
+  };
+});
+
 const router = createBrowserRouter([
   {
     path: ROUTES.main,
@@ -54,6 +62,16 @@ const router = createBrowserRouter([
     element: (
       <LazyPage>
         <RegisterPage />
+      </LazyPage>
+    ),
+  },
+  {
+    path: ROUTES.quizCreate,
+    element: (
+      <LazyPage>
+        <ProtectedRoute>
+          <QuizCreatePage />
+        </ProtectedRoute>
       </LazyPage>
     ),
   },

@@ -2,6 +2,7 @@ export const ROUTES = {
   main: "/",
   login: "/auth/login",
   register: "/auth/register",
+  quizCreate: "/quizzes/create",
 } as const;
 
 export const AUTH_RETURN_URL_QUERY = "returnUrl";

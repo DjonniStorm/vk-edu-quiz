@@ -40,6 +40,7 @@
         "@mantine/notifications": "^9.4.0",
         "@mantine/nprogress": "^9.4.0",
         "@quiz/shared": "workspace:*",
+        "@tabler/icons-react": "^3.44.0",
         "@unhead/react": "^3.0.0-beta.9",
         "axios": "^1.18.1",
         "canvas-confetti": "^1.9.4",
@@ -319,6 +320,10 @@
     "@standard-schema/spec": ["@standard-schema/spec@1.1.0", "", {}, "sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w=="],
 
     "@standard-schema/utils": ["@standard-schema/utils@0.3.0", "", {}, "sha512-e7Mew686owMaPJVNNLs55PUvgz371nKgwsc4vxE49zsODpJEnxgxRo2y/OKrqueavXgZNMDVj3DdHFlaSAeU8g=="],
+
+    "@tabler/icons": ["@tabler/icons@3.44.0", "", {}, "sha512-Wn0AOZG9sg0L+bjfMqq4eNhC6pQjIrk94LvvWYNYkY8KH8wC3YILRzQlrnVJc4FUeMxH/AK97QsYCX35H3LndA=="],
+
+    "@tabler/icons-react": ["@tabler/icons-react@3.44.0", "", { "dependencies": { "@tabler/icons": "3.44.0" }, "peerDependencies": { "react": ">= 16" } }, "sha512-8+rvzBbVm/1Z3sG3x7GUNAaxIKxwgz8xaMhRs23nrCnMTKRFAhEC+82zAIFeAA0seXdrAGX5HFCkaLpGK2rVHg=="],
 
     "@tokenizer/inflate": ["@tokenizer/inflate@0.4.1", "", { "dependencies": { "debug": "^4.4.3", "token-types": "^6.1.1" } }, "sha512-2mAv+8pkG6GIZiF1kNg1jAjh27IDxEPKwdGul3snfztFerfPGI1LjDezZp3i7BElXompqEtPmoPx6c2wgtWsOA=="],
 

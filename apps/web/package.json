@@ -19,6 +19,7 @@
     "@mantine/notifications": "^9.4.0",
     "@mantine/nprogress": "^9.4.0",
     "@quiz/shared": "workspace:*",
+    "@tabler/icons-react": "^3.44.0",
     "@unhead/react": "^3.0.0-beta.9",
     "axios": "^1.18.1",
     "canvas-confetti": "^1.9.4",
