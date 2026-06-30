@@ -33,6 +33,10 @@ export class ProfileStore {
   }
 
   async load() {
+    if (this.isLoading) {
+      return;
+    }
+
     this.isLoading = true;
     this.loadError = null;
 

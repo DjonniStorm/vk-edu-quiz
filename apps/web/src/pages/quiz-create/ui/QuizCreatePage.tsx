@@ -54,32 +54,25 @@ export const QuizCreatePage = observer(() => {
         cancel: t(LANG_KEYS.common.cancel),
       },
       confirmProps: { color: "red" },
-      onConfirm: () => {
-        void quizCreateStore.archive().then((isSuccess) => {
-          if (isSuccess) {
-            navigate(ROUTES.main, { replace: true });
-          }
-        });
+      onConfirm: async () => {
+        const isSuccess = await quizCreateStore.archive();
+        if (isSuccess) {
+          navigate(ROUTES.main, { replace: true });
+        }
       },
     });
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (activeStep === QUIZ_CREATE_STEPS.review) {
       if (loadedStatus === QuizStatus.Published) {
-        void quizCreateStore.saveDraft().then((isSuccess) => {
-          if (isSuccess) {
-            navigate(ROUTES.main, { replace: true });
-          }
-        });
+        const isSuccess = await quizCreateStore.saveDraft();
+        if (isSuccess) navigate(ROUTES.main, { replace: true });
         return;
       }
 
-      void quizCreateStore.publish().then((isSuccess) => {
-        if (isSuccess) {
-          navigate(ROUTES.main, { replace: true });
-        }
-      });
+      const isSuccess = await quizCreateStore.publish();
+      if (isSuccess) navigate(ROUTES.main, { replace: true });
       return;
     }
 

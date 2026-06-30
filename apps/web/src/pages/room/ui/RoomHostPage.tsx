@@ -26,7 +26,12 @@ export const RoomHostPage = observer(() => {
       return;
     }
 
-    void roomStore.initHost(roomId).then((isSuccess) => {
+    let cancelled = false;
+
+    (async () => {
+      const isSuccess = await roomStore.initHost(roomId);
+      if (cancelled) return;
+
       if (!isSuccess && roomStore.loadError) {
         navigate(ROUTES.main, { replace: true });
         return;
@@ -35,9 +40,10 @@ export const RoomHostPage = observer(() => {
       if (isSuccess && roomStore.roomId && roomStore.roomId !== roomId) {
         navigate(buildRoomHostPath(roomStore.roomId), { replace: true });
       }
-    });
+    })();
 
     return () => {
+      cancelled = true;
       roomStore.dispose();
     };
   }, [navigate, roomId]);

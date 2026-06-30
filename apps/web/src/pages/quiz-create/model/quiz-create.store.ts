@@ -51,8 +51,10 @@ export class QuizCreateStore {
   isLoadingQuiz = false;
   loadError: string | null = null;
 
+  private loadingQuizId: string | null = null;
+
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable<this, "loadingQuizId">(this, { loadingQuizId: false });
     this.selectedQuestionClientId = this.draft.questions[0]?.clientId ?? null;
   }
 
@@ -327,9 +329,14 @@ export class QuizCreateStore {
   async loadQuiz(quizId: string): Promise<void> {
     this.isLoadingQuiz = true;
     this.loadError = null;
+    this.loadingQuizId = quizId;
 
     try {
       const quiz = await quizzesApi.getQuiz(quizId);
+
+      if (this.loadingQuizId !== quizId) {
+        return;
+      }
 
       if (quiz.status === QuizStatus.Archived) {
         runInAction(() => {
@@ -353,7 +360,7 @@ export class QuizCreateStore {
         this.activeStep = QUIZ_CREATE_STEPS.basicInfo;
       });
     } catch (error) {
-      if (isCancelError(error)) {
+      if (isCancelError(error) || this.loadingQuizId !== quizId) {
         return;
       }
 
@@ -364,9 +371,11 @@ export class QuizCreateStore {
         );
       });
     } finally {
-      runInAction(() => {
-        this.isLoadingQuiz = false;
-      });
+      if (this.loadingQuizId === quizId) {
+        runInAction(() => {
+          this.isLoadingQuiz = false;
+        });
+      }
     }
   }
 
@@ -473,6 +482,7 @@ export class QuizCreateStore {
   }
 
   reset() {
+    this.loadingQuizId = null;
     this.activeStep = QUIZ_CREATE_STEPS.basicInfo;
     this.draft = createInitialDraft();
     this.selectedQuestionClientId = this.draft.questions[0]?.clientId ?? null;

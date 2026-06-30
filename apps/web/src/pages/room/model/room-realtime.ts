@@ -114,19 +114,22 @@ export class RoomRealtimeClient {
       params.set("roomParticipantId", this.roomParticipantId);
     }
 
-    if (role === SessionRole.Organizer) {
-      const accessToken = authTokenStorage.getAccessToken();
-
-      if (accessToken) {
-        params.set("token", accessToken);
-      }
-    }
-
     const url = `${env.wsBaseUrl}/realtime/rooms/${roomId}?${params.toString()}`;
     const socket = new WebSocket(url);
     this.socket = socket;
 
     socket.onopen = () => {
+      if (role === SessionRole.Organizer) {
+        const accessToken = authTokenStorage.getAccessToken();
+
+        if (!accessToken) {
+          socket.close(4401, "No access token");
+          return;
+        }
+
+        socket.send(JSON.stringify({ type: "auth", token: accessToken }));
+      }
+
       this.connectionHandler?.(true);
     };
 
@@ -142,11 +145,13 @@ export class RoomRealtimeClient {
       }
     };
 
-    socket.onclose = () => {
+    socket.onclose = (event) => {
       this.connectionHandler?.(false);
       this.socket = null;
 
-      if (!this.disposed && this.roomId && this.role) {
+      const isAuthFailure = event.code === 4401;
+
+      if (!this.disposed && !isAuthFailure && this.roomId && this.role) {
         this.scheduleReconnect();
       }
     };

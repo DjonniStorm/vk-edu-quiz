@@ -79,39 +79,42 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
   const currentUser = userStore.currentUser;
   const roleLabel =
     currentUser?.role === UserRole.Admin ? t(LANG_KEYS.roles.admin) : t(LANG_KEYS.roles.user);
-  const navItems: NavItem[] = [
-    {
-      key: "dashboard",
-      label: t(LANG_KEYS.layout.app.nav.dashboard),
-      kind: "section",
-      sectionId: "dashboard",
-    },
-    {
-      key: "myQuizzes",
-      label: t(LANG_KEYS.layout.app.nav.myQuizzes),
-      kind: "section",
-      sectionId: "my-quizzes",
-    },
-    {
-      key: "joinRoom",
-      label: t(LANG_KEYS.layout.app.nav.joinRoom),
-      kind: "section",
-      sectionId: "join-room",
-    },
-    {
-      key: "createQuiz",
-      label: t(LANG_KEYS.layout.app.nav.createQuiz),
-      kind: "route",
-      to: ROUTES.quizCreate,
-    },
-    {
-      key: "history",
-      label: t(LANG_KEYS.layout.app.nav.history),
-      kind: "pageSection",
-      route: ROUTES.profile,
-      sectionId: PROFILE_HISTORY_SECTION_ID,
-    },
-  ];
+  const navItems = useMemo<NavItem[]>(
+    () => [
+      {
+        key: "dashboard",
+        label: t(LANG_KEYS.layout.app.nav.dashboard),
+        kind: "section",
+        sectionId: "dashboard",
+      },
+      {
+        key: "myQuizzes",
+        label: t(LANG_KEYS.layout.app.nav.myQuizzes),
+        kind: "section",
+        sectionId: "my-quizzes",
+      },
+      {
+        key: "joinRoom",
+        label: t(LANG_KEYS.layout.app.nav.joinRoom),
+        kind: "section",
+        sectionId: "join-room",
+      },
+      {
+        key: "createQuiz",
+        label: t(LANG_KEYS.layout.app.nav.createQuiz),
+        kind: "route",
+        to: ROUTES.quizCreate,
+      },
+      {
+        key: "history",
+        label: t(LANG_KEYS.layout.app.nav.history),
+        kind: "pageSection",
+        route: ROUTES.profile,
+        sectionId: PROFILE_HISTORY_SECTION_ID,
+      },
+    ],
+    [t],
+  );
   const currentActiveNav = useMemo(
     () => resolveActiveNav(location.pathname, location.hash, activeNav),
     [location.pathname, location.hash, activeNav],
@@ -138,12 +141,16 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
     navigate(ROUTES.login);
   };
 
-  const navButtonStyle = (isActive: boolean) => ({
-    borderRadius: 6,
-    background: isActive ? "#e9efff" : "transparent",
-    color: isActive ? "#1c4ed8" : "#1f2937",
-    textDecoration: "none",
-  });
+  const navButtonStyle = useMemo(
+    () =>
+      (isActive: boolean) => ({
+        borderRadius: 6,
+        background: isActive ? "#e9efff" : "transparent",
+        color: isActive ? "#1c4ed8" : "#1f2937",
+        textDecoration: "none",
+      }),
+    [],
+  );
 
   return (
     <AppShell

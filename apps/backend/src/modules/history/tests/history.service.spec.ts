@@ -215,7 +215,7 @@ describe("HistoryServiceImpl", () => {
           displayName: "history-participant user",
           score: 10,
           correctAnswersCount: 1,
-          totalAnswerTimeMs: 1500,
+          totalAnswerTimeMs: expect.any(Number),
         },
       ],
     });

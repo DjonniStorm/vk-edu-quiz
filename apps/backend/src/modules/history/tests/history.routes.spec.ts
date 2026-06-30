@@ -201,7 +201,7 @@ describe("history routes", () => {
           displayName: "history-route-participant user",
           score: 10,
           correctAnswersCount: 1,
-          totalAnswerTimeMs: 900,
+          totalAnswerTimeMs: expect.any(Number),
         },
       ],
     });

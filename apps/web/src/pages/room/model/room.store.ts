@@ -44,6 +44,7 @@ export class RoomStore {
   isLoading = false;
   loadError: string | null = null;
   isActionPending = false;
+  isLoadingParticipants = false;
 
   roomParticipantId: string | null = null;
   displayName = "";
@@ -245,6 +246,7 @@ export class RoomStore {
     this.isLoading = false;
     this.loadError = null;
     this.isActionPending = false;
+    this.isLoadingParticipants = false;
     this.roomParticipantId = null;
     this.displayName = "";
     this.realtimeRole = null;
@@ -600,9 +602,11 @@ export class RoomStore {
   }
 
   async loadHostParticipants(): Promise<void> {
-    if (!this.roomId || this.realtimeRole !== SessionRole.Organizer) {
+    if (!this.roomId || this.realtimeRole !== SessionRole.Organizer || this.isLoadingParticipants) {
       return;
     }
+
+    this.isLoadingParticipants = true;
 
     try {
       const participants = await roomsApi.getHostParticipants(this.roomId);
@@ -615,6 +619,10 @@ export class RoomStore {
       if (isCancelError(error)) {
         return;
       }
+    } finally {
+      runInAction(() => {
+        this.isLoadingParticipants = false;
+      });
     }
   }
 

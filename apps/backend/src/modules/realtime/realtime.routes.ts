@@ -15,16 +15,23 @@ const realtimeConnectionQuerySchema = z
   .object({
     role: z.enum(["organizer", "participant"]).default("participant"),
     roomParticipantId: z.string().uuid().optional(),
-    token: z.string().min(1).optional(),
   })
   .refine((value) => value.role === "organizer" || !!value.roomParticipantId, {
     message: "roomParticipantId is required for participant connections",
     path: ["roomParticipantId"],
-  })
-  .refine((value) => value.role !== "organizer" || !!value.token, {
-    message: "token is required for organizer connections",
-    path: ["token"],
   });
+
+const wsOrganizerAuthSchema = z.object({
+  type: z.literal("auth"),
+  token: z.string().min(1),
+});
+
+const AUTH_TIMEOUT_MS = 5000;
+
+interface PendingAuth {
+  roomId: string;
+  timeoutId: ReturnType<typeof setTimeout>;
+}
 
 export const createRealtimeRoutes = ({
   realtimeGateway,
@@ -32,6 +39,26 @@ export const createRealtimeRoutes = ({
   prisma,
 }: RealtimeRoutesDeps) => {
   const connectionIds = new WeakMap<object, string>();
+  const pendingAuth = new WeakMap<object, PendingAuth>();
+
+  const registerConnection = (
+    ws: { send: (payload: string) => void; close: (code?: number, reason?: string) => void },
+    wsRef: object,
+    roomId: string,
+    roomParticipantId: string | undefined,
+    isOrganizer: boolean,
+  ) => {
+    const connectionId = crypto.randomUUID();
+    connectionIds.set(wsRef, connectionId);
+
+    realtimeGateway.registerConnection(
+      { id: connectionId, roomId, roomParticipantId, isOrganizer },
+      {
+        send: (payload) => ws.send(payload),
+        close: (code, reason) => ws.close(code, reason),
+      },
+    );
+  };
 
   return new Elysia({ prefix: "/realtime" })
     .get("/health", () => ({ status: "ok" }), {
@@ -39,11 +66,12 @@ export const createRealtimeRoutes = ({
         tags: ["Realtime"],
         summary: "Realtime health check",
         description:
-          "WebSocket endpoint: /realtime/rooms/:roomId?role=participant&roomParticipantId=:id or ?role=organizer&token=:accessToken",
+          "WebSocket endpoint: /realtime/rooms/:roomId?role=participant&roomParticipantId=:id " +
+          "or ?role=organizer (auth token sent as first message: {type:'auth',token:'...'})",
       },
     })
     .ws("/rooms/:roomId", {
-      open: async (ws) => {
+      open: (ws) => {
         const roomId = ws.data.params.roomId;
         const query = realtimeConnectionQuerySchema.safeParse(ws.data.query);
 
@@ -63,42 +91,64 @@ export const createRealtimeRoutes = ({
         }
 
         if (query.data.role === "organizer") {
-          const currentUser = await authContextProvider.getCurrentUser(
-            `Bearer ${query.data.token}`,
-          );
-          const room = await prisma.room.findUnique({
-            where: { id: roomId },
-            select: { organizerId: true },
-          });
+          const timeoutId = setTimeout(() => {
+            pendingAuth.delete(ws);
+            ws.close(4401, "Auth timeout");
+          }, AUTH_TIMEOUT_MS);
 
-          if (!currentUser || !room || room.organizerId !== currentUser.id) {
-            ws.close(4401, "Unauthorized organizer connection");
+          pendingAuth.set(ws, { roomId, timeoutId });
 
-            return;
-          }
+          return;
         }
 
-        const connectionId = crypto.randomUUID();
-        connectionIds.set(ws, connectionId);
-
-        realtimeGateway.registerConnection(
-          {
-            id: connectionId,
-            roomId,
-            roomParticipantId: query.data.roomParticipantId,
-            isOrganizer: query.data.role === "organizer",
-          },
-          {
-            send: (payload) => {
-              ws.send(payload);
-            },
-            close: (code, reason) => {
-              ws.close(code, reason);
-            },
-          },
-        );
+        registerConnection(ws, ws, roomId, query.data.roomParticipantId, false);
       },
+
+      message: async (ws, rawMessage) => {
+        const pending = pendingAuth.get(ws);
+
+        if (!pending) {
+          return;
+        }
+
+        clearTimeout(pending.timeoutId);
+        pendingAuth.delete(ws);
+
+        let parsed: z.infer<typeof wsOrganizerAuthSchema>;
+
+        try {
+          parsed = wsOrganizerAuthSchema.parse(JSON.parse(String(rawMessage)));
+        } catch {
+          ws.close(4401, "Invalid auth message");
+
+          return;
+        }
+
+        const [currentUser, room] = await Promise.all([
+          authContextProvider.getCurrentUser(`Bearer ${parsed.token}`),
+          prisma.room.findUnique({
+            where: { id: pending.roomId },
+            select: { organizerId: true },
+          }),
+        ]);
+
+        if (!currentUser || !room || room.organizerId !== currentUser.id) {
+          ws.close(4401, "Unauthorized organizer connection");
+
+          return;
+        }
+
+        registerConnection(ws, ws, pending.roomId, undefined, true);
+      },
+
       close(ws) {
+        const pending = pendingAuth.get(ws);
+
+        if (pending) {
+          clearTimeout(pending.timeoutId);
+          pendingAuth.delete(ws);
+        }
+
         const connectionId = connectionIds.get(ws);
 
         if (connectionId) {

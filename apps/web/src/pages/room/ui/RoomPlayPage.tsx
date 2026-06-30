@@ -24,7 +24,12 @@ export const RoomPlayPage = observer(() => {
       return;
     }
 
-    void roomStore.initPlay(roomId).then((isSuccess) => {
+    let cancelled = false;
+
+    (async () => {
+      const isSuccess = await roomStore.initPlay(roomId);
+      if (cancelled) return;
+
       if (!isSuccess && roomStore.loadError) {
         navigate(ROUTES.main, { replace: true });
         return;
@@ -33,9 +38,10 @@ export const RoomPlayPage = observer(() => {
       if (isSuccess && roomStore.roomId && roomStore.roomId !== roomId) {
         navigate(buildRoomPlayPath(roomStore.roomId), { replace: true });
       }
-    });
+    })();
 
     return () => {
+      cancelled = true;
       roomStore.dispose();
     };
   }, [navigate, roomId]);

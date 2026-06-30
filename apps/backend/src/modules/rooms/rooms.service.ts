@@ -1,4 +1,4 @@
-import { BadRequestError, ConflictError, NotFoundError } from "../../core/errors";
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "../../core/errors";
 import type { EntityId } from "../../core/types";
 import type { PrismaClient } from "../../generated/prisma/client";
 import { AnswerMode, ParticipantStatus, QuizStatus, RoomStatus } from "../../generated/prisma/enums";
@@ -422,6 +422,7 @@ export class RoomServiceImpl implements RoomService {
         quizId: true,
         status: true,
         currentQuestionId: true,
+        currentQuestionStartedAt: true,
       },
     });
 
@@ -480,56 +481,62 @@ export class RoomServiceImpl implements RoomService {
 
     this.validateAnswerInput(input, question);
 
-    const existingAnswer = await this.prisma.participantAnswer.findFirst({
-      where: {
-        roomParticipantId: input.roomParticipantId,
-        questionId: input.questionId,
-      },
-      select: { id: true },
-    });
-
-    if (existingAnswer) {
-      throw new ConflictError("Question already answered by this participant");
-    }
+    const answerTimeMs = room.currentQuestionStartedAt
+      ? Math.min(
+          Math.max(0, Date.now() - room.currentQuestionStartedAt.getTime()),
+          question.timeLimitSec * 1000,
+        )
+      : 0;
 
     const correctOptionIds = question.answerOptions
       .filter((option) => option.isCorrect)
       .map((option) => option.id);
     const isCorrect = this.areSameSets(input.answerOptionIds, correctOptionIds);
     const points = isCorrect ? question.points : 0;
-    const answer = await this.prisma.$transaction(async (tx) => {
-      const createdAnswer = await tx.participantAnswer.create({
-        data: {
-          roomId,
-          roomParticipantId: input.roomParticipantId,
-          questionId: input.questionId,
-          answerTimeMs: input.answerTimeMs,
-          isCorrect,
-          points,
-          participantAnswerOptions: {
-            create: input.answerOptionIds.map((answerOptionId) => ({
-              answerOptionId,
-            })),
+
+    let answer: { id: string; isCorrect: boolean; points: number };
+
+    try {
+      answer = await this.prisma.$transaction(async (tx) => {
+        const createdAnswer = await tx.participantAnswer.create({
+          data: {
+            roomId,
+            roomParticipantId: input.roomParticipantId,
+            questionId: input.questionId,
+            answerTimeMs,
+            isCorrect,
+            points,
+            participantAnswerOptions: {
+              create: input.answerOptionIds.map((answerOptionId) => ({
+                answerOptionId,
+              })),
+            },
           },
-        },
-        select: {
-          id: true,
-          isCorrect: true,
-          points: true,
-        },
-      });
+          select: {
+            id: true,
+            isCorrect: true,
+            points: true,
+          },
+        });
 
-      await tx.roomParticipant.update({
-        where: { id: input.roomParticipantId },
-        data: {
-          score: { increment: points },
-          correctAnswersCount: { increment: isCorrect ? 1 : 0 },
-          totalAnswerTimeMs: { increment: input.answerTimeMs },
-        },
-      });
+        await tx.roomParticipant.update({
+          where: { id: input.roomParticipantId },
+          data: {
+            score: { increment: points },
+            correctAnswersCount: { increment: isCorrect ? 1 : 0 },
+            totalAnswerTimeMs: { increment: answerTimeMs },
+          },
+        });
 
-      return createdAnswer;
-    });
+        return createdAnswer;
+      });
+    } catch (error) {
+      if (isPrismaUniqueViolation(error)) {
+        throw new ConflictError("Question already answered by this participant");
+      }
+
+      throw error;
+    }
 
     const answeredCount = await this.prisma.participantAnswer.count({
       where: {
@@ -991,20 +998,22 @@ export class RoomServiceImpl implements RoomService {
   }
 
   private async findOrganizerRoom(organizerId: EntityId, roomId: EntityId) {
-    const room = await this.prisma.room.findFirst({
-      where: {
-        id: roomId,
-        organizerId,
-      },
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
       select: {
         id: true,
         quizId: true,
         status: true,
+        organizerId: true,
       },
     });
 
     if (!room) {
       throw new NotFoundError("Room not found");
+    }
+
+    if (room.organizerId !== organizerId) {
+      throw new ForbiddenError("Access denied");
     }
 
     return room;
@@ -1014,7 +1023,6 @@ export class RoomServiceImpl implements RoomService {
     input: SubmitAnswerInput,
     question: {
       answerMode: AnswerMode;
-      timeLimitSec: number;
       answerOptions: { id: string }[];
     },
   ): void {
@@ -1022,14 +1030,6 @@ export class RoomServiceImpl implements RoomService {
 
     if (uniqueAnswerOptionIds.size !== input.answerOptionIds.length) {
       throw new BadRequestError("Answer option ids must be unique");
-    }
-
-    if (input.answerTimeMs < 0) {
-      throw new BadRequestError("Answer time must be positive");
-    }
-
-    if (input.answerTimeMs > question.timeLimitSec * 1000) {
-      throw new BadRequestError("Answer time limit exceeded");
     }
 
     if (question.answerMode === AnswerMode.SINGLE && input.answerOptionIds.length !== 1) {

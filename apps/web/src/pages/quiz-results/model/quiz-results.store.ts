@@ -28,6 +28,10 @@ export class QuizResultsStore {
   }
 
   async load(quizId: string) {
+    if (this.isLoading) {
+      return;
+    }
+
     this.isLoading = true;
     this.loadError = null;
     this.sessions = [];

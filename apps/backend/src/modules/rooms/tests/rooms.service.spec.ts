@@ -1,6 +1,6 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
-import { BadRequestError, ConflictError, NotFoundError } from "../../../core/errors";
+import { BadRequestError, ConflictError, ForbiddenError, NotFoundError } from "../../../core/errors";
 import {
   deleteTestUsersByEmail,
   disconnectTestPrismaClient,
@@ -61,20 +61,6 @@ const disposeCreatedRoomServices = (): void => {
   createdRoomServices.length = 0;
 };
 
-const expectRejectedWith = async (
-  action: Promise<unknown>,
-  ErrorClass: new (...args: never[]) => Error,
-): Promise<void> => {
-  let caughtError: unknown;
-
-  try {
-    await action;
-  } catch (error) {
-    caughtError = error;
-  }
-
-  expect(caughtError).toBeInstanceOf(ErrorClass);
-};
 
 const createRoomService = (options?: { questionRevealDelayMs?: number }) => {
   realtimeGateway = new CapturingRealtimeGateway();
@@ -180,10 +166,7 @@ describe("RoomServiceImpl", () => {
     const quiz = await createDraftQuizForOwner(organizer.id);
     const roomService = createRoomService();
 
-    await expectRejectedWith(
-      roomService.createRoom(organizer.id, { quizId: quiz.id }),
-      BadRequestError,
-    );
+    await expect(roomService.createRoom(organizer.id, { quizId: quiz.id })).rejects.toThrow(BadRequestError);
   });
 
   it("не создаёт комнату для архивного квиза", async () => {
@@ -196,10 +179,7 @@ describe("RoomServiceImpl", () => {
     await quizService.updateQuiz(organizer.id, published.id, { status: QuizStatus.ARCHIVED });
     const roomService = createRoomService();
 
-    await expectRejectedWith(
-      roomService.createRoom(organizer.id, { quizId: published.id }),
-      BadRequestError,
-    );
+    await expect(roomService.createRoom(organizer.id, { quizId: published.id })).rejects.toThrow(BadRequestError);
   });
 
   it("создаёт комнату для своего квиза", async () => {
@@ -253,10 +233,7 @@ describe("RoomServiceImpl", () => {
     const quiz = await createQuizForOwner(organizer.id);
     const roomService = createRoomService();
 
-    await expectRejectedWith(
-      roomService.createRoom(anotherOrganizer.id, { quizId: quiz.id }),
-      NotFoundError,
-    );
+    await expect(roomService.createRoom(anotherOrganizer.id, { quizId: quiz.id })).rejects.toThrow(NotFoundError);
   });
 
   it("подключает гостя и авторизованного участника", async () => {
@@ -350,10 +327,7 @@ describe("RoomServiceImpl", () => {
       data: { status: RoomStatus.ACTIVE },
     });
 
-    await expectRejectedWith(
-      roomService.joinRoom(room.id, { displayName: "Поздний участник" }),
-      BadRequestError,
-    );
+    await expect(roomService.joinRoom(room.id, { displayName: "Поздний участник" })).rejects.toThrow(BadRequestError);
   });
 
   it("стартует комнату и выбирает первый вопрос по orderIndex", async () => {
@@ -394,7 +368,7 @@ describe("RoomServiceImpl", () => {
     const roomService = createRoomService();
     const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
 
-    await expectRejectedWith(roomService.startRoom(anotherOrganizer.id, room.id), NotFoundError);
+    await expect(roomService.startRoom(anotherOrganizer.id, room.id)).rejects.toThrow(ForbiddenError);
   });
 
   it("не принимает ответ до старта комнаты", async () => {
@@ -404,15 +378,14 @@ describe("RoomServiceImpl", () => {
     const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
     const participant = await roomService.joinRoom(room.id, { displayName: "Участник" });
 
-    await expectRejectedWith(
+    await expect(
       roomService.submitAnswer(room.id, {
         roomParticipantId: participant.id,
         questionId: quiz.questions[0]!.id,
         answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
         answerTimeMs: 1000,
       }),
-      BadRequestError,
-    );
+    ).rejects.toThrow(BadRequestError);
   });
 
   it("не принимает ответ на не текущий вопрос", async () => {
@@ -424,15 +397,14 @@ describe("RoomServiceImpl", () => {
 
     await roomService.startRoom(organizer.id, room.id);
 
-    await expectRejectedWith(
+    await expect(
       roomService.submitAnswer(room.id, {
         roomParticipantId: participant.id,
         questionId: quiz.questions[1]!.id,
         answerOptionIds: [quiz.questions[1]!.answerOptions[0]!.id],
         answerTimeMs: 1000,
       }),
-      BadRequestError,
-    );
+    ).rejects.toThrow(BadRequestError);
   });
 
   it("начисляет баллы за правильный single choice ответ и запрещает повторный ответ", async () => {
@@ -500,18 +472,17 @@ describe("RoomServiceImpl", () => {
     expect(dbParticipant).toMatchObject({
       score: 10,
       correctAnswersCount: 1,
-      totalAnswerTimeMs: 1500,
+      totalAnswerTimeMs: expect.any(Number),
     });
 
-    await expectRejectedWith(
+    await expect(
       roomService.submitAnswer(room.id, {
         roomParticipantId: participant.id,
         questionId: quiz.questions[0]!.id,
         answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
         answerTimeMs: 1200,
       }),
-      ConflictError,
-    );
+    ).rejects.toThrow(ConflictError);
   });
 
   it("не начисляет баллы за частичный multiple choice ответ", async () => {
@@ -545,7 +516,7 @@ describe("RoomServiceImpl", () => {
     expect(dbParticipant).toMatchObject({
       score: 0,
       correctAnswersCount: 0,
-      totalAnswerTimeMs: 2000,
+      totalAnswerTimeMs: expect.any(Number),
     });
   });
 
@@ -758,9 +729,8 @@ describe("RoomServiceImpl", () => {
       answerTimeMs: 500,
     });
 
-    await expectRejectedWith(
+    await expect(
       roomService.showQuestion(organizer.id, room.id, quiz.questions[1]!.id),
-      ConflictError,
-    );
+    ).rejects.toThrow(ConflictError);
   });
 });

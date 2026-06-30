@@ -243,7 +243,7 @@ describe("room routes", () => {
     const forbiddenResponse = await app.handle(
       jsonRequest("GET", `/rooms/${room.id}/host/participants`, undefined, strangerToken),
     );
-    expect(forbiddenResponse.status).toBe(404);
+    expect(forbiddenResponse.status).toBe(403);
 
     const joinResponse = await app.handle(
       jsonRequest(

@@ -26,8 +26,10 @@ export class OrganizerDashboardStore {
   isLoading = false;
   isQuizzesLoading = false;
 
+  private loadQuizzesToken = 0;
+
   constructor() {
-    makeAutoObservable(this);
+    makeAutoObservable<this, "loadQuizzesToken">(this, { loadQuizzesToken: false });
   }
 
   get totalPages(): number {
@@ -39,6 +41,10 @@ export class OrganizerDashboardStore {
   }
 
   async loadDashboard() {
+    if (this.isLoading) {
+      return;
+    }
+
     this.isLoading = true;
 
     try {
@@ -67,6 +73,7 @@ export class OrganizerDashboardStore {
   }
 
   async loadQuizzes() {
+    const token = ++this.loadQuizzesToken;
     this.isQuizzesLoading = true;
 
     const search = this.search.trim();
@@ -79,20 +86,26 @@ export class OrganizerDashboardStore {
         ...(this.statusFilter ? { status: this.statusFilter } : {}),
       });
 
+      if (token !== this.loadQuizzesToken) {
+        return;
+      }
+
       runInAction(() => {
         this.filteredTotal = quizzesPage.total;
         this.quizzes = quizzesPage.items.map(mapQuizListItemToCard);
       });
     } catch (error) {
-      if (isCancelError(error)) {
+      if (isCancelError(error) || token !== this.loadQuizzesToken) {
         return;
       }
 
       errorStore.pushFromUnknown(error, i18n.t(LANG_KEYS.pages.organizerDashboard.loadFailed));
     } finally {
-      runInAction(() => {
-        this.isQuizzesLoading = false;
-      });
+      if (token === this.loadQuizzesToken) {
+        runInAction(() => {
+          this.isQuizzesLoading = false;
+        });
+      }
     }
   }
 
