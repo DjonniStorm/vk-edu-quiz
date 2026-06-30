@@ -10,7 +10,7 @@ import { buildRoomPlayPath } from "@/app/routes";
 import { userStore } from "@/entities/user";
 import { errorStore } from "@/entities/error";
 import { getApiErrorMessage, isCancelError, roomsApi } from "@/shared/api";
-import { notify, parseRoomIdFromInviteInput } from "@/shared/lib";
+import { notify, parseRoomInviteInput } from "@/shared/lib";
 import { sectionAnchorStyle } from "@/widgets/app-layout/lib/scroll-to-section";
 
 import { roomSessionStorage } from "@/pages/room/model/room-session";
@@ -23,9 +23,9 @@ export const JoinRoomPanel = observer(() => {
   const currentUser = userStore.currentUser;
 
   const handleJoin = async () => {
-    const roomId = parseRoomIdFromInviteInput(inviteInput);
+    const identifier = parseRoomInviteInput(inviteInput);
 
-    if (!roomId) {
+    if (!identifier) {
       notify.warning(t(LANG_KEYS.pages.organizerDashboard.joinRoom.invalidInput));
       return;
     }
@@ -34,15 +34,10 @@ export const JoinRoomPanel = observer(() => {
       return;
     }
 
-    if (roomSessionStorage.get(roomId)) {
-      navigate(buildRoomPlayPath(roomId));
-      return;
-    }
-
     setIsJoining(true);
 
     try {
-      const room = await roomsApi.getRoom(roomId);
+      const room = await roomsApi.getRoom(identifier);
 
       if (!room) {
         notify.warning(t(LANG_KEYS.pages.organizerDashboard.joinRoom.notFound));
@@ -54,16 +49,23 @@ export const JoinRoomPanel = observer(() => {
         return;
       }
 
-      const participant = await roomsApi.join(roomId, {
+      const session = roomSessionStorage.get(room.id);
+
+      if (session) {
+        navigate(buildRoomPlayPath(room.id));
+        return;
+      }
+
+      const participant = await roomsApi.join(room.id, {
         displayName: currentUser.name,
       });
 
-      roomSessionStorage.set(roomId, {
+      roomSessionStorage.set(room.id, {
         roomParticipantId: participant.id,
         displayName: participant.displayName,
       });
 
-      navigate(buildRoomPlayPath(roomId));
+      navigate(buildRoomPlayPath(room.id));
     } catch (error) {
       if (isCancelError(error)) {
         return;

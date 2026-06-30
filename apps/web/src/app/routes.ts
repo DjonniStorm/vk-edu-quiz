@@ -7,6 +7,7 @@ export const ROUTES = {
   quizResults: "/quizzes/:quizId/results",
   roomPlay: "/rooms/:roomId",
   roomHost: "/rooms/:roomId/host",
+  notFound: "*",
 } as const;
 
 export const buildRoomPlayPath = (roomId: string) => `/rooms/${roomId}`;

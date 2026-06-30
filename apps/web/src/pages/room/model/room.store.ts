@@ -94,13 +94,12 @@ export class RoomStore {
     return this.room?.status === RoomStatus.Finished;
   }
 
-  async initHost(roomId: string): Promise<boolean> {
+  async initHost(identifier: string): Promise<boolean> {
     this.reset();
-    this.roomId = roomId;
     this.isLoading = true;
 
     try {
-      const room = await roomsApi.getRoom(roomId);
+      const room = await roomsApi.getRoom(identifier);
 
       if (!room) {
         runInAction(() => {
@@ -110,12 +109,15 @@ export class RoomStore {
         return false;
       }
 
+      const roomId = room.id;
+
       const [quiz, leaderboard] = await Promise.all([
         quizzesApi.getQuiz(room.quizId),
         roomsApi.getLeaderboard(roomId),
       ]);
 
       runInAction(() => {
+        this.roomId = roomId;
         this.room = room;
         this.quizTitle = quiz.title;
         this.questions = [...quiz.questions]
@@ -150,13 +152,12 @@ export class RoomStore {
     }
   }
 
-  async initPlay(roomId: string): Promise<boolean> {
+  async initPlay(identifier: string): Promise<boolean> {
     this.reset();
-    this.roomId = roomId;
     this.isLoading = true;
 
     try {
-      const room = await roomsApi.getRoom(roomId);
+      const room = await roomsApi.getRoom(identifier);
 
       if (!room) {
         runInAction(() => {
@@ -166,9 +167,11 @@ export class RoomStore {
         return false;
       }
 
+      const roomId = room.id;
       const session = roomSessionStorage.get(roomId);
 
       runInAction(() => {
+        this.roomId = roomId;
         this.room = room;
 
         if (room.status === RoomStatus.Finished) {
@@ -456,6 +459,14 @@ export class RoomStore {
     }
 
     await navigator.clipboard.writeText(this.inviteUrl);
+  }
+
+  async copyRoomCode(): Promise<void> {
+    if (!this.room?.code) {
+      return;
+    }
+
+    await navigator.clipboard.writeText(this.room.code);
   }
 
   private connectRealtime(role: SessionRole, roomParticipantId?: string): void {

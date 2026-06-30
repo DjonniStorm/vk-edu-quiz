@@ -1,10 +1,10 @@
 import { z } from "zod";
 
-import { optionalImageUrlSchema, paginationQuerySchema } from "@quiz/shared";
+import { listQuizzesQuerySchema, optionalImageUrlSchema } from "@quiz/shared";
 
 import { AnswerMode, QuizStatus } from "../../generated/prisma/enums";
 
-export { paginationQuerySchema };
+export { listQuizzesQuerySchema };
 
 export const answerOptionInputSchema = z.object({
   text: z.string().min(1),

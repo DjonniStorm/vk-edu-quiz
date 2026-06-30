@@ -6,7 +6,7 @@ import { useNavigate, useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
 import { usePageHead } from "@/app/seo";
-import { ROUTES } from "@/app/routes";
+import { buildRoomPlayPath, ROUTES } from "@/app/routes";
 
 import { roomStore } from "../model/room.store";
 import { FinishedScreen } from "./components/FinishedScreen";
@@ -27,6 +27,11 @@ export const RoomPlayPage = observer(() => {
     void roomStore.initPlay(roomId).then((isSuccess) => {
       if (!isSuccess && roomStore.loadError) {
         navigate(ROUTES.main, { replace: true });
+        return;
+      }
+
+      if (isSuccess && roomStore.roomId && roomStore.roomId !== roomId) {
+        navigate(buildRoomPlayPath(roomStore.roomId), { replace: true });
       }
     });
 
@@ -46,6 +51,7 @@ export const RoomPlayPage = observer(() => {
     wsConnected,
     displayName,
     quizTitle,
+    room,
   } = roomStore;
 
   const pageTitle = quizTitle
@@ -80,7 +86,7 @@ export const RoomPlayPage = observer(() => {
           <JoinForm isLoading={isActionPending} onJoin={(name) => roomStore.join(name)} />
         ) : null}
 
-        {phase === "waiting" && roomId ? <WaitingScreen roomId={roomId} /> : null}
+        {phase === "waiting" && room?.code ? <WaitingScreen roomCode={room.code} /> : null}
 
         {(phase === "answering" || phase === "submitted") && currentQuestion ? (
           <QuestionView
@@ -97,8 +103,8 @@ export const RoomPlayPage = observer(() => {
           />
         ) : null}
 
-        {phase === "submitted" && !currentQuestion && displayName ? (
-          <WaitingScreen roomId={roomId ?? ""} />
+        {phase === "submitted" && !currentQuestion && displayName && room?.code ? (
+          <WaitingScreen roomCode={room.code} />
         ) : null}
 
         {phase === "finished" ? (

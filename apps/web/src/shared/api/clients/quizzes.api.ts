@@ -54,6 +54,8 @@ export interface UpdateQuizInput {
 export interface ListQuizzesQuery {
   limit?: number;
   offset?: number;
+  search?: string;
+  status?: QuizStatus;
 }
 
 class QuizzesApi extends BaseApi {

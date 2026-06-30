@@ -166,6 +166,35 @@ describe("RoomServiceImpl", () => {
       currentQuestionId: null,
       inviteUrl: `/rooms/${room.id}`,
     });
+    expect(room.code).toMatch(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/);
+  });
+
+  it("находит комнату по коду и по uuid", async () => {
+    const organizer = await createOrganizer("room-code-resolve");
+    const quiz = await createQuizForOwner(organizer.id);
+    const roomService = createRoomService();
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+
+    const byCode = await roomService.getRoom(room.code);
+    const byUuid = await roomService.getRoom(room.id);
+
+    expect(byCode).toMatchObject({ id: room.id, code: room.code });
+    expect(byUuid).toMatchObject({ id: room.id, code: room.code });
+  });
+
+  it("пускает участника по коду комнаты", async () => {
+    const organizer = await createOrganizer("room-code-join");
+    const participant = await createParticipant("room-code-join-participant");
+    const quiz = await createQuizForOwner(organizer.id);
+    const roomService = createRoomService();
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+
+    const joined = await roomService.joinRoom(room.code, {
+      userId: participant.id,
+      displayName: "ignored",
+    });
+
+    expect(joined.displayName).toBeTruthy();
   });
 
   it("не создаёт комнату для чужого квиза", async () => {

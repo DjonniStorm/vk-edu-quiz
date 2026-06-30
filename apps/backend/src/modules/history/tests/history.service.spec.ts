@@ -209,7 +209,7 @@ describe("HistoryServiceImpl", () => {
       leaderboard: [
         {
           roomParticipantId: roomParticipant.id,
-          displayName: "Участник",
+          displayName: "history-participant user",
           score: 10,
           correctAnswersCount: 1,
           totalAnswerTimeMs: 1500,

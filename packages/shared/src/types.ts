@@ -14,6 +14,11 @@ export interface PaginationQuery {
   offset?: number;
 }
 
+export interface ListQuizzesQuery extends PaginationQuery {
+  search?: string;
+  status?: QuizStatus;
+}
+
 export interface PaginatedResult<TItem> {
   items: TItem[];
   total: number;
@@ -66,6 +71,7 @@ export interface LeaderboardItemDto {
 
 export interface RoomSummaryDto {
   id: EntityId;
+  code: string;
   quizId: EntityId;
   organizerId: EntityId;
   status: RoomStatus;

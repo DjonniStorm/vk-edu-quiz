@@ -146,6 +146,84 @@ describe("QuizServiceImpl", () => {
     expect(result.items.map((quiz) => quiz.id)).toEqual([ownQuiz.id]);
   });
 
+  it("фильтрует квизы по части названия и описания", async () => {
+    const owner = await createOwner("quiz-search");
+    const quizService = createQuizService();
+
+    await quizService.createQuiz(owner.id, {
+      title: "JavaScript основы",
+      description: "Для новичков",
+    });
+    const targetQuiz = await quizService.createQuiz(owner.id, {
+      title: "Python продвинутый",
+      description: "Асинхронность и типы",
+    });
+    await quizService.createQuiz(owner.id, {
+      title: "SQL базовый",
+      description: "SELECT и JOIN",
+    });
+
+    const byTitle = await quizService.listOwnerQuizzes(owner.id, { search: "python" });
+    const byDescription = await quizService.listOwnerQuizzes(owner.id, { search: "асинхрон" });
+
+    expect(byTitle.total).toBe(1);
+    expect(byTitle.items[0]?.id).toBe(targetQuiz.id);
+    expect(byDescription.total).toBe(1);
+    expect(byDescription.items[0]?.id).toBe(targetQuiz.id);
+  });
+
+  it("фильтрует квизы по статусу", async () => {
+    const owner = await createOwner("quiz-status-filter");
+    const quizService = createQuizService();
+
+    const draftQuiz = await quizService.createQuiz(owner.id, { title: "Черновик" });
+    const publishedQuiz = await quizService.createQuiz(owner.id, { title: "Опубликованный" });
+
+    await quizService.updateQuiz(owner.id, publishedQuiz.id, { status: QuizStatus.PUBLISHED });
+
+    const publishedOnly = await quizService.listOwnerQuizzes(owner.id, {
+      status: QuizStatus.PUBLISHED,
+    });
+    const draftOnly = await quizService.listOwnerQuizzes(owner.id, {
+      status: QuizStatus.DRAFT,
+    });
+
+    expect(publishedOnly.total).toBe(1);
+    expect(publishedOnly.items[0]?.id).toBe(publishedQuiz.id);
+    expect(draftOnly.total).toBe(1);
+    expect(draftOnly.items[0]?.id).toBe(draftQuiz.id);
+  });
+
+  it("пагинирует отфильтрованный список", async () => {
+    const owner = await createOwner("quiz-pagination-filter");
+    const quizService = createQuizService();
+
+    for (let index = 0; index < 5; index += 1) {
+      const quiz = await quizService.createQuiz(owner.id, { title: `Математика ${index + 1}` });
+      await quizService.updateQuiz(owner.id, quiz.id, { status: QuizStatus.PUBLISHED });
+    }
+
+    await quizService.createQuiz(owner.id, { title: "История" });
+
+    const firstPage = await quizService.listOwnerQuizzes(owner.id, {
+      search: "математика",
+      status: QuizStatus.PUBLISHED,
+      limit: 2,
+      offset: 0,
+    });
+    const secondPage = await quizService.listOwnerQuizzes(owner.id, {
+      search: "математика",
+      status: QuizStatus.PUBLISHED,
+      limit: 2,
+      offset: 2,
+    });
+
+    expect(firstPage.total).toBe(5);
+    expect(firstPage.items).toHaveLength(2);
+    expect(secondPage.items).toHaveLength(2);
+    expect(firstPage.items[0]?.id).not.toBe(secondPage.items[0]?.id);
+  });
+
   it("полностью заменяет вопросы квиза", async () => {
     const owner = await createOwner("quiz-replace");
     const quizService = createQuizService();

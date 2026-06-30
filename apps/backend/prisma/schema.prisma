@@ -109,6 +109,7 @@ model AnswerOption {
 
 model Room {
   id                String     @id @default(uuid()) @db.Uuid
+  code              String     @unique
   quizId            String     @db.Uuid
   organizerId       String     @db.Uuid
   status            RoomStatus @default(WAITING)

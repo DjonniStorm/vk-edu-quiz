@@ -1,8 +1,10 @@
 import { lazy } from "react";
-import { createBrowserRouter, RouterProvider } from "react-router";
+import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import { ROUTES } from "../routes";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { LazyPage } from "./LazyPage";
 import { ProtectedRoute } from "@/features/protected-route";
+import { NotFoundPage } from "@/pages/error";
 import { loaderStore } from "@/shared/api";
 import { getRouteKey } from "@/shared/api/route-key";
 
@@ -62,80 +64,95 @@ const RoomHostPage = lazy(async () => {
   };
 });
 
+const RootLayout = () => (
+  <ErrorBoundary>
+    <Outlet />
+  </ErrorBoundary>
+);
+
 const router = createBrowserRouter([
   {
-    path: ROUTES.main,
-    element: (
-      <LazyPage>
-        <ProtectedRoute>
-          <OrganizerDashboardPage />
-        </ProtectedRoute>
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.login,
-    element: (
-      <LazyPage>
-        <LoginPage />
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.register,
-    element: (
-      <LazyPage>
-        <RegisterPage />
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.quizCreate,
-    element: (
-      <LazyPage>
-        <ProtectedRoute>
-          <QuizCreatePage />
-        </ProtectedRoute>
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.quizEdit,
-    element: (
-      <LazyPage>
-        <ProtectedRoute>
-          <QuizCreatePage />
-        </ProtectedRoute>
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.quizResults,
-    element: (
-      <LazyPage>
-        <ProtectedRoute>
-          <QuizResultsPage />
-        </ProtectedRoute>
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.roomPlay,
-    element: (
-      <LazyPage>
-        <RoomPlayPage />
-      </LazyPage>
-    ),
-  },
-  {
-    path: ROUTES.roomHost,
-    element: (
-      <LazyPage>
-        <ProtectedRoute>
-          <RoomHostPage />
-        </ProtectedRoute>
-      </LazyPage>
-    ),
+    element: <RootLayout />,
+    children: [
+      {
+        path: ROUTES.main,
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <OrganizerDashboardPage />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.login,
+        element: (
+          <LazyPage>
+            <LoginPage />
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.register,
+        element: (
+          <LazyPage>
+            <RegisterPage />
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.quizCreate,
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <QuizCreatePage />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.quizEdit,
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <QuizCreatePage />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.quizResults,
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <QuizResultsPage />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.roomPlay,
+        element: (
+          <LazyPage>
+            <RoomPlayPage />
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.roomHost,
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <RoomHostPage />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.notFound,
+        element: <NotFoundPage />,
+      },
+    ],
   },
 ]);
 

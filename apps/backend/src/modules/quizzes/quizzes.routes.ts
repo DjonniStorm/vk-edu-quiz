@@ -5,7 +5,7 @@ import { requireCurrentUser } from "../../plugins/auth-guards";
 import type { QuizService } from "./quizzes.interfaces";
 import {
   createQuizSchema,
-  paginationQuerySchema,
+  listQuizzesQuerySchema,
   replaceQuestionsSchema,
   updateQuizSchema,
 } from "./quizzes.schemas";
@@ -20,7 +20,7 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
     .get("/", async ({ headers, query }) => {
       const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 
-      return quizService.listOwnerQuizzes(currentUser.id, paginationQuerySchema.parse(query));
+      return quizService.listOwnerQuizzes(currentUser.id, listQuizzesQuerySchema.parse(query));
     }, {
       detail: {
         tags: ["Quizzes"],

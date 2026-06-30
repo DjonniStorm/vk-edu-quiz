@@ -1,5 +1,6 @@
 import { BadRequestError, NotFoundError } from "../../core/errors";
-import type { EntityId, PaginatedResult, PaginationQuery } from "../../core/types";
+import type { EntityId, ListQuizzesQuery, PaginatedResult } from "../../core/types";
+import type { Prisma } from "../../generated/prisma/client";
 import type { PrismaClient } from "../../generated/prisma/client";
 import { AnswerMode } from "../../generated/prisma/enums";
 import type {
@@ -17,14 +18,15 @@ export class QuizServiceImpl implements QuizService {
 
   async listOwnerQuizzes(
     ownerId: EntityId,
-    query: PaginationQuery = {},
+    query: ListQuizzesQuery = {},
   ): Promise<PaginatedResult<QuizListItem>> {
     const limit = query.limit ?? 20;
     const offset = query.offset ?? 0;
+    const where = this.buildOwnerQuizzesWhere(ownerId, query);
 
     const [items, total] = await Promise.all([
       this.prisma.quiz.findMany({
-        where: { ownerId },
+        where,
         orderBy: { createdAt: "desc" },
         skip: offset,
         take: limit,
@@ -37,7 +39,7 @@ export class QuizServiceImpl implements QuizService {
           },
         },
       }),
-      this.prisma.quiz.count({ where: { ownerId } }),
+      this.prisma.quiz.count({ where }),
     ]);
 
     return {
@@ -168,6 +170,26 @@ export class QuizServiceImpl implements QuizService {
       allowLateJoin: source.allowLateJoin,
       questions,
     });
+  }
+
+  private buildOwnerQuizzesWhere(
+    ownerId: EntityId,
+    query: ListQuizzesQuery,
+  ): Prisma.QuizWhereInput {
+    const search = query.search?.trim();
+
+    return {
+      ownerId,
+      ...(query.status ? { status: query.status } : {}),
+      ...(search
+        ? {
+            OR: [
+              { title: { contains: search, mode: "insensitive" } },
+              { description: { contains: search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    };
   }
 
   private async ensureOwnerQuizExists(ownerId: EntityId, quizId: EntityId): Promise<void> {

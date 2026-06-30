@@ -1,0 +1,123 @@
+.error-illustration {
+  display: block;
+  width: min(240px, 70vw);
+  height: auto;
+  margin-inline: auto;
+}
+
+.error-illustration__card {
+  transform-origin: 120px 120px;
+  animation: error-card-wobble 4s ease-in-out infinite;
+}
+
+.error-illustration__crack {
+  stroke-dasharray: 80;
+  stroke-dashoffset: 80;
+  animation: error-crack-draw 2.4s ease-in-out infinite;
+}
+
+.error-illustration__mark {
+  transform-origin: 120px 108px;
+  animation: error-mark-pulse 2s ease-in-out infinite;
+}
+
+.error-illustration__ring {
+  transform-origin: 120px 120px;
+  animation: error-ring-spin 12s linear infinite;
+}
+
+.error-illustration__orbit {
+  transform-origin: 120px 120px;
+  animation: error-orbit 6s linear infinite;
+}
+
+.error-illustration__orbit--delay {
+  animation-delay: -2s;
+}
+
+.error-illustration__orbit--delay-2 {
+  animation-delay: -4s;
+}
+
+.error-illustration__spark {
+  animation: error-spark-float 3s ease-in-out infinite;
+}
+
+.error-illustration__spark--2 {
+  animation-delay: -1s;
+}
+
+.error-illustration__spark--3 {
+  animation-delay: -2s;
+}
+
+@keyframes error-card-wobble {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(2deg) translateY(-4px);
+  }
+}
+
+@keyframes error-crack-draw {
+  0%,
+  100% {
+    stroke-dashoffset: 80;
+    opacity: 0.35;
+  }
+
+  40%,
+  60% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes error-mark-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: 0.82;
+  }
+}
+
+@keyframes error-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes error-orbit {
+  from {
+    transform: rotate(0deg) translateX(58px);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(58px);
+  }
+}
+
+@keyframes error-spark-float {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: translateY(-10px);
+    opacity: 1;
+  }
+}

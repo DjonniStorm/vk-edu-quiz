@@ -19,8 +19,16 @@ import type {
   SubmitAnswerInput,
 } from "./rooms.interfaces";
 import { RoomMapper } from "./rooms.mapper";
+import { generateRoomCode, resolveRoomRecord } from "./room-code";
 
 const QUESTION_REVEAL_DELAY_MS = 2000;
+const MAX_ROOM_CODE_ATTEMPTS = 5;
+
+const isPrismaUniqueViolation = (error: unknown): boolean =>
+  typeof error === "object" &&
+  error !== null &&
+  "code" in error &&
+  (error as { code: string }).code === "P2002";
 
 type AdvanceReason = "all_answered" | "timer" | "manual";
 
@@ -95,28 +103,50 @@ export class RoomServiceImpl implements RoomService {
       throw new NotFoundError("Quiz not found");
     }
 
-    const room = await this.prisma.room.create({
-      data: {
-        quizId: input.quizId,
-        organizerId,
-      },
-    });
+    for (let attempt = 0; attempt < MAX_ROOM_CODE_ATTEMPTS; attempt++) {
+      try {
+        const room = await this.prisma.room.create({
+          data: {
+            quizId: input.quizId,
+            organizerId,
+            code: generateRoomCode(),
+          },
+        });
 
-    return RoomMapper.toRoomSummary(room);
+        return RoomMapper.toRoomSummary(room);
+      } catch (error) {
+        if (isPrismaUniqueViolation(error) && attempt < MAX_ROOM_CODE_ATTEMPTS - 1) {
+          continue;
+        }
+
+        throw error;
+      }
+    }
+
+    throw new Error("Failed to generate unique room code");
   }
 
-  async getRoom(roomId: EntityId): Promise<RoomSummary | null> {
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-    });
+  async getRoom(identifier: string): Promise<RoomSummary | null> {
+    const room = await resolveRoomRecord(this.prisma, identifier);
 
     return room ? RoomMapper.toRoomSummary(room) : null;
   }
 
   async getCurrentQuestion(
-    roomId: EntityId,
+    identifier: string,
     roomParticipantId?: EntityId,
   ): Promise<CurrentQuestionState> {
+    const resolvedRoom = await resolveRoomRecord(this.prisma, identifier);
+
+    if (!resolvedRoom) {
+      return {
+        question: null,
+        answeredCount: 0,
+        participantHasAnswered: false,
+      };
+    }
+
+    const roomId = resolvedRoom.id;
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
       select: {
@@ -181,13 +211,15 @@ export class RoomServiceImpl implements RoomService {
     };
   }
 
-  async getHostState(organizerId: EntityId, roomId: EntityId): Promise<HostQuestionState> {
+  async getHostState(organizerId: EntityId, identifier: string): Promise<HostQuestionState> {
+    const roomId = await this.requireRoomId(identifier);
     await this.findOrganizerRoom(organizerId, roomId);
 
     return this.buildHostState(roomId);
   }
 
-  async getHostParticipants(organizerId: EntityId, roomId: EntityId): Promise<HostParticipant[]> {
+  async getHostParticipants(organizerId: EntityId, identifier: string): Promise<HostParticipant[]> {
+    const roomId = await this.requireRoomId(identifier);
     await this.findOrganizerRoom(organizerId, roomId);
 
     const participants = await this.prisma.roomParticipant.findMany({
@@ -211,7 +243,14 @@ export class RoomServiceImpl implements RoomService {
     }));
   }
 
-  async joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails> {
+  async joinRoom(identifier: string, input: JoinRoomInput): Promise<RoomParticipantDetails> {
+    const resolvedRoom = await resolveRoomRecord(this.prisma, identifier);
+
+    if (!resolvedRoom) {
+      throw new NotFoundError("Room not found");
+    }
+
+    const roomId = resolvedRoom.id;
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
       include: {
@@ -291,7 +330,8 @@ export class RoomServiceImpl implements RoomService {
     }
   }
 
-  async startRoom(organizerId: EntityId, roomId: EntityId): Promise<LiveQuestion | null> {
+  async startRoom(organizerId: EntityId, identifier: string): Promise<LiveQuestion | null> {
+    const roomId = await this.requireRoomId(identifier);
     const room = await this.findOrganizerRoom(organizerId, roomId);
 
     if (room.status !== RoomStatus.WAITING) {
@@ -332,9 +372,11 @@ export class RoomServiceImpl implements RoomService {
 
   async showQuestion(
     organizerId: EntityId,
-    roomId: EntityId,
+    identifier: string,
     questionId: EntityId,
   ): Promise<LiveQuestion> {
+    const roomId = await this.requireRoomId(identifier);
+
     if (this.isQuestionClosing(roomId)) {
       throw new ConflictError("Question is closing");
     }
@@ -348,7 +390,8 @@ export class RoomServiceImpl implements RoomService {
     return this.showQuestionInternal(organizerId, roomId, room.quizId, questionId);
   }
 
-  async advanceQuestion(organizerId: EntityId, roomId: EntityId): Promise<{ ok: true }> {
+  async advanceQuestion(organizerId: EntityId, identifier: string): Promise<{ ok: true }> {
+    const roomId = await this.requireRoomId(identifier);
     await this.findOrganizerRoom(organizerId, roomId);
 
     const room = await this.prisma.room.findUnique({
@@ -366,7 +409,8 @@ export class RoomServiceImpl implements RoomService {
     return { ok: true };
   }
 
-  async submitAnswer(roomId: EntityId, input: SubmitAnswerInput): Promise<AnswerResult> {
+  async submitAnswer(identifier: string, input: SubmitAnswerInput): Promise<AnswerResult> {
+    const roomId = await this.requireRoomId(identifier);
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
       select: {
@@ -517,15 +561,8 @@ export class RoomServiceImpl implements RoomService {
     return answer;
   }
 
-  async getLeaderboard(roomId: EntityId): Promise<LeaderboardItem[]> {
-    const room = await this.prisma.room.findUnique({
-      where: { id: roomId },
-      select: { id: true },
-    });
-
-    if (!room) {
-      throw new NotFoundError("Room not found");
-    }
+  async getLeaderboard(identifier: string): Promise<LeaderboardItem[]> {
+    const roomId = await this.requireRoomId(identifier);
 
     const participants = await this.prisma.roomParticipant.findMany({
       where: { roomId },
@@ -539,7 +576,8 @@ export class RoomServiceImpl implements RoomService {
     return participants.map((participant) => RoomMapper.toLeaderboardItem(participant));
   }
 
-  async finishRoom(organizerId: EntityId, roomId: EntityId): Promise<LeaderboardItem[]> {
+  async finishRoom(organizerId: EntityId, identifier: string): Promise<LeaderboardItem[]> {
+    const roomId = await this.requireRoomId(identifier);
     await this.findOrganizerRoom(organizerId, roomId);
 
     return this.finishRoomInternal(roomId);
@@ -936,6 +974,16 @@ export class RoomServiceImpl implements RoomService {
 
   private isQuestionClosing(roomId: EntityId): boolean {
     return this.closingState.has(roomId);
+  }
+
+  private async requireRoomId(identifier: string): Promise<EntityId> {
+    const room = await resolveRoomRecord(this.prisma, identifier);
+
+    if (!room) {
+      throw new NotFoundError("Room not found");
+    }
+
+    return room.id;
   }
 
   private async findOrganizerRoom(organizerId: EntityId, roomId: EntityId) {

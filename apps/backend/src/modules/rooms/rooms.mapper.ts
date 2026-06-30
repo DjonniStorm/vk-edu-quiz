@@ -10,6 +10,7 @@ import type {
 
 export interface RoomRecord {
   id: string;
+  code: string;
   quizId: string;
   organizerId: string;
   status: RoomStatus;
@@ -47,6 +48,7 @@ export class RoomMapper {
   static toRoomSummary(room: RoomRecord): RoomSummary {
     return {
       id: room.id,
+      code: room.code,
       quizId: room.quizId,
       organizerId: room.organizerId,
       status: room.status,

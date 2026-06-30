@@ -1,2 +1,2 @@
 export { notify } from "./notifications";
-export { parseRoomIdFromInviteInput } from "./room-invite";
+export { parseRoomIdFromInviteInput, parseRoomInviteInput } from "./room-invite";

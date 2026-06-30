@@ -5,8 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { buildRoomHostPath, ROUTES } from "@/app/routes";
 import { usePageHead } from "@/app/seo";
-import { ROUTES } from "@/app/routes";
 import { AppLayout } from "@/widgets/app-layout";
 
 import { roomStore } from "../model/room.store";
@@ -29,6 +29,11 @@ export const RoomHostPage = observer(() => {
     void roomStore.initHost(roomId).then((isSuccess) => {
       if (!isSuccess && roomStore.loadError) {
         navigate(ROUTES.main, { replace: true });
+        return;
+      }
+
+      if (isSuccess && roomStore.roomId && roomStore.roomId !== roomId) {
+        navigate(buildRoomHostPath(roomStore.roomId), { replace: true });
       }
     });
 
@@ -49,6 +54,7 @@ export const RoomHostPage = observer(() => {
     revealedCorrectOptionIds,
     isQuestionClosing,
     inviteUrl,
+    room,
     isActionPending,
     isWaiting,
     isLive,
@@ -142,12 +148,14 @@ export const RoomHostPage = observer(() => {
                       activeParticipantCount={activeParticipantCount}
                       hostParticipants={hostParticipants}
                       inviteUrl={inviteUrl}
+                      roomCode={room?.code ?? ""}
                       isActionPending={isActionPending}
                       isQuestionClosing={isQuestionClosing}
                       onStart={() => void roomStore.start()}
                       onNext={() => void roomStore.nextQuestion()}
                       onFinish={() => void roomStore.finish()}
                       onCopyLink={() => roomStore.copyInviteLink()}
+                      onCopyRoomCode={() => roomStore.copyRoomCode()}
                     />
 
                     <Stack gap="xs">

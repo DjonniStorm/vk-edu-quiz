@@ -14,12 +14,14 @@ export interface HostControlsProps {
   activeParticipantCount: number;
   hostParticipants: HostParticipantDto[];
   inviteUrl: string;
+  roomCode: string;
   isActionPending: boolean;
   isQuestionClosing: boolean;
   onStart: () => void;
   onNext: () => void;
   onFinish: () => void;
   onCopyLink: () => Promise<void>;
+  onCopyRoomCode: () => Promise<void>;
 }
 
 export const HostControls = ({
@@ -31,18 +33,25 @@ export const HostControls = ({
   activeParticipantCount,
   hostParticipants,
   inviteUrl,
+  roomCode,
   isActionPending,
   isQuestionClosing,
   onStart,
   onNext,
   onFinish,
   onCopyLink,
+  onCopyRoomCode,
 }: HostControlsProps) => {
   const { t } = useTranslation();
 
-  const handleCopy = async () => {
+  const handleCopyLink = async () => {
     await onCopyLink();
     notify.success(t(LANG_KEYS.pages.room.host.linkCopied));
+  };
+
+  const handleCopyRoomCode = async () => {
+    await onCopyRoomCode();
+    notify.success(t(LANG_KEYS.pages.room.host.codeCopied));
   };
 
   if (isFinished) {
@@ -82,8 +91,12 @@ export const HostControls = ({
                 {t(LANG_KEYS.pages.room.host.participantsEmpty)}
               </Text>
             )}
+            <TextInput label={t(LANG_KEYS.pages.room.host.roomCode)} value={roomCode} readOnly />
+            <Button variant="default" onClick={() => void handleCopyRoomCode()}>
+              {t(LANG_KEYS.pages.room.host.copyRoomCode)}
+            </Button>
             <TextInput label={t(LANG_KEYS.pages.room.host.inviteLink)} value={inviteUrl} readOnly />
-            <Button variant="default" onClick={() => void handleCopy()}>
+            <Button variant="default" onClick={() => void handleCopyLink()}>
               {t(LANG_KEYS.pages.room.host.copyLink)}
             </Button>
             <Button loading={isActionPending} onClick={onStart}>

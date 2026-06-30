@@ -1,6 +1,7 @@
 import type {
   EntityId,
   IsoDateString,
+  ListQuizzesQuery,
   PaginatedResult,
   PaginationQuery,
 } from "@quiz/shared";
@@ -12,7 +13,7 @@ import type {
   UserRole,
 } from "../generated/prisma/enums";
 
-export type { EntityId, IsoDateString, PaginatedResult, PaginationQuery } from "@quiz/shared";
+export type { EntityId, IsoDateString, ListQuizzesQuery, PaginatedResult, PaginationQuery } from "@quiz/shared";
 
 export type AppUserRole = UserRole;
 export type AppQuizStatus = QuizStatus;

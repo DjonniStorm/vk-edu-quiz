@@ -194,7 +194,7 @@ describe("history routes", () => {
       leaderboard: [
         {
           roomParticipantId: roomParticipant.id,
-          displayName: "HTTP участник",
+          displayName: "history-route-participant user",
           score: 10,
           correctAnswersCount: 1,
           totalAnswerTimeMs: 900,

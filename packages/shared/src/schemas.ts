@@ -1,12 +1,23 @@
 import { z } from "zod";
 
-import { AnswerMode } from "./enums";
+import { AnswerMode, QuizStatus } from "./enums";
 
 export const entityIdSchema = z.uuid();
+
+export const roomCodeSchema = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .regex(/^[23456789ABCDEFGHJKLMNPQRSTUVWXYZ]{6}$/);
 
 export const paginationQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).optional(),
   offset: z.coerce.number().int().min(0).optional(),
+});
+
+export const listQuizzesQuerySchema = paginationQuerySchema.extend({
+  search: z.string().trim().max(100).optional(),
+  status: z.enum([QuizStatus.Draft, QuizStatus.Published, QuizStatus.Archived]).optional(),
 });
 
 export const registerUserSchema = z.object({

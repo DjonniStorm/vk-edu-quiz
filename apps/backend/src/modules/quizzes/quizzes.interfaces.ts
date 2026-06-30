@@ -2,8 +2,8 @@ import type {
   AppAnswerMode,
   AppQuizStatus,
   EntityId,
+  ListQuizzesQuery,
   PaginatedResult,
-  PaginationQuery,
 } from "../../core/types";
 
 export interface AnswerOptionInput {
@@ -76,7 +76,7 @@ export interface AnswerOptionDetails {
 }
 
 export interface QuizService {
-  listOwnerQuizzes(ownerId: EntityId, query?: PaginationQuery): Promise<PaginatedResult<QuizListItem>>;
+  listOwnerQuizzes(ownerId: EntityId, query?: ListQuizzesQuery): Promise<PaginatedResult<QuizListItem>>;
   getOwnerQuiz(ownerId: EntityId, quizId: EntityId): Promise<QuizDetails | null>;
   createQuiz(ownerId: EntityId, input: CreateQuizInput): Promise<QuizDetails>;
   updateQuiz(ownerId: EntityId, quizId: EntityId, input: UpdateQuizInput): Promise<QuizDetails>;

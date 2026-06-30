@@ -9,6 +9,7 @@ import type {
   RoomResults,
 } from "./history.interfaces";
 import { HistoryMapper } from "./history.mapper";
+import { resolveRoomRecord } from "../rooms/room-code";
 
 export class HistoryServiceImpl implements HistoryService {
   constructor(private readonly prisma: PrismaClient) {}
@@ -129,7 +130,14 @@ export class HistoryServiceImpl implements HistoryService {
     };
   }
 
-  async getRoomResults(organizerId: EntityId, roomId: EntityId): Promise<RoomResults | null> {
+  async getRoomResults(organizerId: EntityId, identifier: EntityId): Promise<RoomResults | null> {
+    const resolvedRoom = await resolveRoomRecord(this.prisma, identifier);
+
+    if (!resolvedRoom) {
+      return null;
+    }
+
+    const roomId = resolvedRoom.id;
     const room = await this.prisma.room.findFirst({
       where: {
         id: roomId,

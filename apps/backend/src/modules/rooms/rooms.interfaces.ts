@@ -24,6 +24,7 @@ export interface SubmitAnswerInput {
 
 export interface RoomSummary {
   id: EntityId;
+  code: string;
   quizId: EntityId;
   organizerId: EntityId;
   status: AppRoomStatus;
@@ -106,19 +107,23 @@ export interface HostParticipant {
 
 export interface RoomService {
   createRoom(organizerId: EntityId, input: CreateRoomInput): Promise<RoomSummary>;
-  getRoom(roomId: EntityId): Promise<RoomSummary | null>;
+  getRoom(identifier: string): Promise<RoomSummary | null>;
   getCurrentQuestion(
-    roomId: EntityId,
+    identifier: string,
     roomParticipantId?: EntityId,
   ): Promise<CurrentQuestionState>;
-  getHostState(organizerId: EntityId, roomId: EntityId): Promise<HostQuestionState>;
-  getHostParticipants(organizerId: EntityId, roomId: EntityId): Promise<HostParticipant[]>;
-  joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails>;
+  getHostState(organizerId: EntityId, identifier: string): Promise<HostQuestionState>;
+  getHostParticipants(organizerId: EntityId, identifier: string): Promise<HostParticipant[]>;
+  joinRoom(identifier: string, input: JoinRoomInput): Promise<RoomParticipantDetails>;
   leaveRoom(roomParticipantId: EntityId): Promise<void>;
-  startRoom(organizerId: EntityId, roomId: EntityId): Promise<LiveQuestion | null>;
-  showQuestion(organizerId: EntityId, roomId: EntityId, questionId: EntityId): Promise<LiveQuestion>;
-  advanceQuestion(organizerId: EntityId, roomId: EntityId): Promise<{ ok: true }>;
-  submitAnswer(roomId: EntityId, input: SubmitAnswerInput): Promise<AnswerResult>;
-  getLeaderboard(roomId: EntityId): Promise<LeaderboardItem[]>;
-  finishRoom(organizerId: EntityId, roomId: EntityId): Promise<LeaderboardItem[]>;
+  startRoom(organizerId: EntityId, identifier: string): Promise<LiveQuestion | null>;
+  showQuestion(
+    organizerId: EntityId,
+    identifier: string,
+    questionId: EntityId,
+  ): Promise<LiveQuestion>;
+  advanceQuestion(organizerId: EntityId, identifier: string): Promise<{ ok: true }>;
+  submitAnswer(identifier: string, input: SubmitAnswerInput): Promise<AnswerResult>;
+  getLeaderboard(identifier: string): Promise<LeaderboardItem[]>;
+  finishRoom(organizerId: EntityId, identifier: string): Promise<LeaderboardItem[]>;
 }
