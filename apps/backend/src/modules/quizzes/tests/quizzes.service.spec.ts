@@ -7,13 +7,29 @@ import {
   getTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestUser } from "../../../core/testing/test-users";
-import { AnswerMode, QuizStatus } from "../../../generated/prisma/enums";
+import { AnswerMode, QuizStatus, RoomStatus } from "../../../generated/prisma/enums";
 import type { QuestionInput } from "../quizzes.interfaces";
 import { QuizServiceImpl } from "../quizzes.service";
+import { generateRoomCode } from "../../rooms/room-code";
 
 const createdEmails: string[] = [];
 
 const createQuizService = () => new QuizServiceImpl(getTestPrismaClient());
+
+const expectRejectedWith = async (
+  action: Promise<unknown>,
+  ErrorClass: new (...args: never[]) => Error,
+): Promise<void> => {
+  let caughtError: unknown;
+
+  try {
+    await action;
+  } catch (error) {
+    caughtError = error;
+  }
+
+  expect(caughtError).toBeInstanceOf(ErrorClass);
+};
 
 const createOwner = async (prefix: string) => {
   const user = await createTestUser(prefix);
@@ -106,12 +122,13 @@ describe("QuizServiceImpl", () => {
 
     question.answerOptions[1]!.isCorrect = true;
 
-    await expect(
+    await expectRejectedWith(
       quizService.createQuiz(owner.id, {
         title: "Невалидный квиз",
         questions: [question],
       }),
-    ).rejects.toBeInstanceOf(BadRequestError);
+      BadRequestError,
+    );
   });
 
   it("не создаёт вопрос без правильного варианта", async () => {
@@ -124,12 +141,13 @@ describe("QuizServiceImpl", () => {
       isCorrect: false,
     }));
 
-    await expect(
+    await expectRejectedWith(
       quizService.createQuiz(owner.id, {
         title: "Невалидный квиз",
         questions: [question],
       }),
-    ).rejects.toBeInstanceOf(BadRequestError);
+      BadRequestError,
+    );
   });
 
   it("возвращает в списке только квизы владельца", async () => {
@@ -222,6 +240,85 @@ describe("QuizServiceImpl", () => {
     expect(firstPage.items).toHaveLength(2);
     expect(secondPage.items).toHaveLength(2);
     expect(firstPage.items[0]?.id).not.toBe(secondPage.items[0]?.id);
+  });
+
+  it("архивирует опубликованный квиз", async () => {
+    const owner = await createOwner("quiz-archive");
+    const quizService = createQuizService();
+    const quiz = await quizService.createQuiz(owner.id, { title: "К архиву" });
+    const published = await quizService.updateQuiz(owner.id, quiz.id, { status: QuizStatus.PUBLISHED });
+
+    const archived = await quizService.updateQuiz(owner.id, published.id, {
+      status: QuizStatus.ARCHIVED,
+    });
+
+    expect(archived.status).toBe(QuizStatus.ARCHIVED);
+  });
+
+  it("не архивирует черновик", async () => {
+    const owner = await createOwner("quiz-archive-draft");
+    const quizService = createQuizService();
+    const quiz = await quizService.createQuiz(owner.id, { title: "Черновик" });
+
+    let error: unknown;
+
+    try {
+      await quizService.updateQuiz(owner.id, quiz.id, { status: QuizStatus.ARCHIVED });
+    } catch (caught) {
+      error = caught;
+    }
+
+    expect(error).toBeInstanceOf(BadRequestError);
+  });
+
+  it("не восстанавливает архивный квиз", async () => {
+    const owner = await createOwner("quiz-archive-restore");
+    const quizService = createQuizService();
+    const quiz = await quizService.createQuiz(owner.id, { title: "Архивный" });
+    const published = await quizService.updateQuiz(owner.id, quiz.id, { status: QuizStatus.PUBLISHED });
+    await quizService.updateQuiz(owner.id, published.id, { status: QuizStatus.ARCHIVED });
+
+    await expectRejectedWith(
+      quizService.updateQuiz(owner.id, published.id, { status: QuizStatus.PUBLISHED }),
+      BadRequestError,
+    );
+  });
+
+  it("не изменяет архивный квиз", async () => {
+    const owner = await createOwner("quiz-archive-readonly");
+    const quizService = createQuizService();
+    const quiz = await quizService.createQuiz(owner.id, { title: "Архивный" });
+    const published = await quizService.updateQuiz(owner.id, quiz.id, { status: QuizStatus.PUBLISHED });
+    await quizService.updateQuiz(owner.id, published.id, { status: QuizStatus.ARCHIVED });
+
+    await expectRejectedWith(
+      quizService.updateQuiz(owner.id, published.id, { title: "Новое название" }),
+      BadRequestError,
+    );
+  });
+
+  it("не архивирует квиз с активной комнатой", async () => {
+    const owner = await createOwner("quiz-archive-active-room");
+    const quizService = createQuizService();
+    const quiz = await quizService.createQuiz(owner.id, {
+      title: "С комнатой",
+      questions: [createSingleQuestion()],
+    });
+    const published = await quizService.updateQuiz(owner.id, quiz.id, { status: QuizStatus.PUBLISHED });
+
+    await getTestPrismaClient().room.create({
+      data: {
+        quizId: published.id,
+        organizerId: owner.id,
+        code: generateRoomCode(),
+        status: RoomStatus.WAITING,
+      },
+    });
+
+    await expectRejectedWith(
+      quizService.updateQuiz(owner.id, published.id, { status: QuizStatus.ARCHIVED }),
+      BadRequestError,
+    );
   });
 
   it("полностью заменяет вопросы квиза", async () => {

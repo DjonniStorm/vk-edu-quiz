@@ -1,7 +1,7 @@
 import { BadRequestError, ConflictError, NotFoundError } from "../../core/errors";
 import type { EntityId } from "../../core/types";
 import type { PrismaClient } from "../../generated/prisma/client";
-import { AnswerMode, ParticipantStatus, RoomStatus } from "../../generated/prisma/enums";
+import { AnswerMode, ParticipantStatus, QuizStatus, RoomStatus } from "../../generated/prisma/enums";
 import { RealtimeEventType, type RealtimeGateway } from "../realtime/realtime.interfaces";
 import type {
   AnswerResult,
@@ -96,11 +96,15 @@ export class RoomServiceImpl implements RoomService {
         id: input.quizId,
         ownerId: organizerId,
       },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
     if (!quiz) {
       throw new NotFoundError("Quiz not found");
+    }
+
+    if (quiz.status !== QuizStatus.PUBLISHED) {
+      throw new BadRequestError("Only published quizzes can be started");
     }
 
     for (let attempt = 0; attempt < MAX_ROOM_CODE_ATTEMPTS; attempt++) {

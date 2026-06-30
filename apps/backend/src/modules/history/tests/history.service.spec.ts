@@ -6,7 +6,7 @@ import {
   getTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestUser } from "../../../core/testing/test-users";
-import { AnswerMode } from "../../../generated/prisma/enums";
+import { AnswerMode, QuizStatus } from "../../../generated/prisma/enums";
 import { QuizServiceImpl } from "../../quizzes/quizzes.service";
 import { InMemoryRealtimeGateway } from "../../realtime/realtime.gateway";
 import { RoomServiceImpl } from "../../rooms/rooms.service";
@@ -41,8 +41,8 @@ const createParticipant = async (prefix: string) => {
   return user;
 };
 
-const createQuiz = (ownerId: string, title = "Исторический квиз") =>
-  createQuizService().createQuiz(ownerId, {
+const createQuiz = async (ownerId: string, title = "Исторический квиз") => {
+  const quiz = await createQuizService().createQuiz(ownerId, {
     title,
     questions: [
       {
@@ -58,6 +58,9 @@ const createQuiz = (ownerId: string, title = "Исторический квиз"
       },
     ],
   });
+
+  return createQuizService().updateQuiz(ownerId, quiz.id, { status: QuizStatus.PUBLISHED });
+};
 
 const createFinishedRoom = async () => {
   const organizer = await createOrganizer("history-owner");

@@ -5,6 +5,7 @@ export const ROUTES = {
   quizCreate: "/quizzes/create",
   quizEdit: "/quizzes/:quizId/edit",
   quizResults: "/quizzes/:quizId/results",
+  profile: "/profile",
   roomPlay: "/rooms/:roomId",
   roomHost: "/rooms/:roomId/host",
   notFound: "*",
@@ -14,6 +15,10 @@ export const buildRoomPlayPath = (roomId: string) => `/rooms/${roomId}`;
 export const buildRoomHostPath = (roomId: string) => `/rooms/${roomId}/host`;
 export const buildQuizEditPath = (quizId: string) => `/quizzes/${quizId}/edit`;
 export const buildQuizResultsPath = (quizId: string) => `/quizzes/${quizId}/results`;
+
+export const PROFILE_HISTORY_SECTION_ID = "participation-history";
+
+export const buildProfileHistoryPath = () => `${ROUTES.profile}#${PROFILE_HISTORY_SECTION_ID}`;
 
 export const AUTH_RETURN_URL_QUERY = "returnUrl";
 

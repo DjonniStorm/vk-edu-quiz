@@ -130,6 +130,15 @@ export interface QuizListItemDto {
   hasRooms: boolean;
 }
 
+export interface ParticipantQuizHistoryItemDto {
+  roomId: EntityId;
+  quizId: EntityId;
+  quizTitle: string;
+  score: number;
+  correctAnswersCount: number;
+  finishedAt: IsoDateString | null;
+}
+
 export interface OrganizerHistorySummaryDto {
   completedSessions: number;
   totalParticipants: number;

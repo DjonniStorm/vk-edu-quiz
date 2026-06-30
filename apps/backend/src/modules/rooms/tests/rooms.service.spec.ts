@@ -7,7 +7,7 @@ import {
   getTestPrismaClient,
 } from "../../../core/testing/test-db";
 import { createTestUser } from "../../../core/testing/test-users";
-import { AnswerMode, ParticipantStatus, RoomStatus } from "../../../generated/prisma/enums";
+import { AnswerMode, ParticipantStatus, QuizStatus, RoomStatus } from "../../../generated/prisma/enums";
 import {
   RealtimeEventType,
   type RealtimeClient,
@@ -102,11 +102,31 @@ const createParticipant = async (prefix: string) => {
   return user;
 };
 
-const createQuizForOwner = async (ownerId: string, allowLateJoin = true) =>
-  createQuizService().createQuiz(ownerId, {
+const publishQuiz = async (ownerId: string, quizId: string) =>
+  createQuizService().updateQuiz(ownerId, quizId, { status: QuizStatus.PUBLISHED });
+
+const createQuizForOwner = async (ownerId: string, allowLateJoin = true) => {
+  const quiz = await createQuizService().createQuiz(ownerId, {
     title: "Квиз для комнаты",
     allowLateJoin,
   });
+
+  return publishQuiz(ownerId, quiz.id);
+};
+
+const createDraftQuizForOwner = async (ownerId: string) =>
+  createQuizService().createQuiz(ownerId, {
+    title: "Черновик",
+  });
+
+const createPublishedQuiz = async (
+  ownerId: string,
+  input: Parameters<QuizServiceImpl["createQuiz"]>[1],
+) => {
+  const quiz = await createQuizService().createQuiz(ownerId, input);
+
+  return publishQuiz(ownerId, quiz.id);
+};
 
 const createSingleQuestion = (orderIndex = 0, imageUrl?: string | null): QuestionInput => ({
   text: "Сколько будет 2 + 2?",
@@ -134,11 +154,14 @@ const createMultipleQuestion = (orderIndex = 0): QuestionInput => ({
   ],
 });
 
-const createLiveQuizForOwner = async (ownerId: string) =>
-  createQuizService().createQuiz(ownerId, {
+const createLiveQuizForOwner = async (ownerId: string) => {
+  const quiz = await createQuizService().createQuiz(ownerId, {
     title: "Live квиз",
     questions: [createSingleQuestion(1), createMultipleQuestion(0)],
   });
+
+  return publishQuiz(ownerId, quiz.id);
+};
 
 afterEach(async () => {
   disposeCreatedRoomServices();
@@ -152,6 +175,33 @@ afterAll(async () => {
 });
 
 describe("RoomServiceImpl", () => {
+  it("не создаёт комнату для черновика", async () => {
+    const organizer = await createOrganizer("room-draft-quiz");
+    const quiz = await createDraftQuizForOwner(organizer.id);
+    const roomService = createRoomService();
+
+    await expectRejectedWith(
+      roomService.createRoom(organizer.id, { quizId: quiz.id }),
+      BadRequestError,
+    );
+  });
+
+  it("не создаёт комнату для архивного квиза", async () => {
+    const organizer = await createOrganizer("room-archived-quiz");
+    const quizService = createQuizService();
+    const quiz = await quizService.createQuiz(organizer.id, { title: "Архивный" });
+    const published = await quizService.updateQuiz(organizer.id, quiz.id, {
+      status: QuizStatus.PUBLISHED,
+    });
+    await quizService.updateQuiz(organizer.id, published.id, { status: QuizStatus.ARCHIVED });
+    const roomService = createRoomService();
+
+    await expectRejectedWith(
+      roomService.createRoom(organizer.id, { quizId: published.id }),
+      BadRequestError,
+    );
+  });
+
   it("создаёт комнату для своего квиза", async () => {
     const organizer = await createOrganizer("room-owner");
     const quiz = await createQuizForOwner(organizer.id);
@@ -387,7 +437,7 @@ describe("RoomServiceImpl", () => {
 
   it("начисляет баллы за правильный single choice ответ и запрещает повторный ответ", async () => {
     const organizer = await createOrganizer("room-single-answer");
-    const quiz = await createQuizService().createQuiz(organizer.id, {
+    const quiz = await createPublishedQuiz(organizer.id, {
       title: "Single quiz",
       questions: [createSingleQuestion()],
     });
@@ -466,7 +516,7 @@ describe("RoomServiceImpl", () => {
 
   it("не начисляет баллы за частичный multiple choice ответ", async () => {
     const organizer = await createOrganizer("room-multiple-partial");
-    const quiz = await createQuizService().createQuiz(organizer.id, {
+    const quiz = await createPublishedQuiz(organizer.id, {
       title: "Multiple quiz",
       questions: [createMultipleQuestion()],
     });
@@ -593,7 +643,7 @@ describe("RoomServiceImpl", () => {
 
   it("восстанавливает host-state из БД после части ответов", async () => {
     const organizer = await createOrganizer("room-host-state");
-    const quiz = await createQuizService().createQuiz(organizer.id, {
+    const quiz = await createPublishedQuiz(organizer.id, {
       title: "Host state quiz",
       questions: [createSingleQuestion()],
     });
@@ -630,7 +680,7 @@ describe("RoomServiceImpl", () => {
   it("пробрасывает imageUrl в live question и host-state", async () => {
     const organizer = await createOrganizer("room-image-url");
     const imageUrl = "https://example.com/live-question.png";
-    const quiz = await createQuizService().createQuiz(organizer.id, {
+    const quiz = await createPublishedQuiz(organizer.id, {
       title: "Image quiz",
       questions: [createSingleQuestion(0, imageUrl)],
     });
@@ -649,7 +699,7 @@ describe("RoomServiceImpl", () => {
   it("возвращает email зарегистрированного участника ведущему", async () => {
     const organizer = await createOrganizer("room-host-email");
     const registeredUser = await createParticipant("room-host-email-user");
-    const quiz = await createQuizService().createQuiz(organizer.id, {
+    const quiz = await createPublishedQuiz(organizer.id, {
       title: "Email quiz",
       questions: [createSingleQuestion()],
     });
@@ -690,7 +740,7 @@ describe("RoomServiceImpl", () => {
     vi.useFakeTimers();
 
     const organizer = await createOrganizer("room-show-closing");
-    const quiz = await createQuizService().createQuiz(organizer.id, {
+    const quiz = await createPublishedQuiz(organizer.id, {
       title: "Closing quiz",
       questions: [createSingleQuestion(), createSingleQuestion(1)],
     });

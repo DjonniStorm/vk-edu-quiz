@@ -99,6 +99,10 @@ export const ru: Translation = {
       subtitle: "Настройте новую сессию.",
       editSubtitle: "Измените настройки и вопросы квиза.",
       saveDraft: "Сохранить черновик",
+      archive: "Архивировать",
+      archiveConfirmTitle: "Отправить квиз в архив?",
+      archiveConfirmBody:
+        "Запуск и редактирование станут недоступны. Восстановить нельзя; при необходимости создайте копию через «Дублировать».",
       steps: {
         basicInfo: "Основная информация",
         questions: "Вопросы",
@@ -111,7 +115,7 @@ export const ru: Translation = {
         category: "Категория",
         titlePlaceholder: "История Древнего Рима",
         descriptionPlaceholder: "Краткое описание квиза",
-        categoryPlaceholder: "История",
+        categoryPlaceholder: "Выберите или введите свою",
       },
       questions: {
         listTitle: "Вопросы ({{count}})",
@@ -174,6 +178,11 @@ export const ru: Translation = {
         loadFailed: "Не удалось загрузить квиз",
         cannotEditWithRooms:
           "У этого квиза уже есть игровые сессии. Создайте копию, чтобы внести изменения.",
+        archived: "Квиз отправлен в архив",
+        archiveFailed: "Не удалось отправить в архив",
+      },
+      errors: {
+        archivedReadOnly: "Архивный квиз нельзя редактировать",
       },
     },
     quizResults: {
@@ -184,6 +193,25 @@ export const ru: Translation = {
       sessionMeta: "{{count}} участников",
       loadFailed: "Не удалось загрузить результаты",
       sessionLoadFailed: "Не удалось загрузить результаты сессии",
+    },
+    profile: {
+      title: "Личный кабинет",
+      metaDescription: "Настройки аккаунта и история прохождений квизов.",
+      loadFailed: "Не удалось загрузить историю прохождений",
+      sections: {
+        profile: "Профиль",
+        settings: "Настройки",
+        history: "История прохождений",
+      },
+      history: {
+        empty: "Вы ещё не проходили ни одного квиза.",
+        columns: {
+          quizTitle: "Квиз",
+          score: "Баллы",
+          correctAnswers: "Правильные ответы",
+          finishedAt: "Завершено",
+        },
+      },
     },
     room: {
       errors: {
@@ -263,10 +291,16 @@ export const ru: Translation = {
       nav: {
         dashboard: "Дашборд",
         myQuizzes: "Мои квизы",
+        joinRoom: "Присоединиться",
         createQuiz: "Создать квиз",
-        activeRooms: "Активные комнаты",
+        history: "История",
         results: "Результаты",
       },
+    },
+    language: {
+      label: "Язык",
+      ru: "Русский",
+      en: "English",
     },
   },
   quizzes: {

@@ -1,8 +1,9 @@
-import { Stack, TextInput, Textarea } from "@mantine/core";
+import { Autocomplete, Stack, TextInput, Textarea } from "@mantine/core";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { QUIZ_CATEGORIES } from "@/shared/config/quiz-categories";
 
 import { quizCreateStore } from "../../model/quiz-create.store";
 
@@ -36,16 +37,19 @@ export const BasicInfoStep = observer(() => {
           })
         }
       />
-      <TextInput
+      <Autocomplete
         label={t(LANG_KEYS.pages.quizCreate.basicInfo.category)}
         placeholder={t(LANG_KEYS.pages.quizCreate.basicInfo.categoryPlaceholder)}
+        data={[...QUIZ_CATEGORIES]}
         value={draft.category}
-        onChange={(event) =>
+        onChange={(value) =>
           quizCreateStore.updateBasicInfo({
             ...draft,
-            category: event.currentTarget.value,
+            category: value,
           })
         }
+        limit={12}
+        maxDropdownHeight={280}
       />
     </Stack>
   );

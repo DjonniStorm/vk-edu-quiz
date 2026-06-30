@@ -17,11 +17,20 @@ export const navigateToSection = (
   pathname: string,
   sectionId: string,
 ) => {
-  if (pathname === ROUTES.main) {
+  navigateToPageSection(navigate, pathname, ROUTES.main, sectionId);
+};
+
+export const navigateToPageSection = (
+  navigate: NavigateFunction,
+  pathname: string,
+  route: string,
+  sectionId: string,
+) => {
+  if (pathname === route) {
     scrollToSection(sectionId);
-    window.history.replaceState(null, "", `#${sectionId}`);
+    window.history.replaceState(null, "", `${route}#${sectionId}`);
     return;
   }
 
-  navigate(`${ROUTES.main}#${sectionId}`);
+  navigate(`${route}#${sectionId}`);
 };

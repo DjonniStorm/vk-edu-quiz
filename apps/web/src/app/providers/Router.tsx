@@ -48,6 +48,14 @@ const QuizResultsPage = lazy(async () => {
   };
 });
 
+const ProfilePage = lazy(async () => {
+  const module = await import("@/pages/profile");
+
+  return {
+    default: module.ProfilePage,
+  };
+});
+
 const RoomPlayPage = lazy(async () => {
   const module = await import("@/pages/room");
 
@@ -126,6 +134,16 @@ const router = createBrowserRouter([
           <LazyPage>
             <ProtectedRoute>
               <QuizResultsPage />
+            </ProtectedRoute>
+          </LazyPage>
+        ),
+      },
+      {
+        path: ROUTES.profile,
+        element: (
+          <LazyPage>
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           </LazyPage>
         ),

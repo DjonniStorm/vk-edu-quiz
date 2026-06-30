@@ -97,6 +97,10 @@ export const en = {
       subtitle: "Configure your new assessment session.",
       editSubtitle: "Update quiz settings and questions.",
       saveDraft: "Save draft",
+      archive: "Archive",
+      archiveConfirmTitle: "Archive this quiz?",
+      archiveConfirmBody:
+        "Starting and editing will be disabled. It cannot be restored; duplicate the quiz if you need a copy.",
       steps: {
         basicInfo: "Basic information",
         questions: "Questions",
@@ -109,7 +113,7 @@ export const en = {
         category: "Category",
         titlePlaceholder: "Ancient Rome History",
         descriptionPlaceholder: "Brief description of the quiz",
-        categoryPlaceholder: "History",
+        categoryPlaceholder: "Choose or type your own",
       },
       questions: {
         listTitle: "Questions ({{count}})",
@@ -171,6 +175,11 @@ export const en = {
         publishFailed: "Failed to publish quiz",
         loadFailed: "Failed to load quiz",
         cannotEditWithRooms: "This quiz already has game sessions. Duplicate it to make changes.",
+        archived: "Quiz archived",
+        archiveFailed: "Failed to archive quiz",
+      },
+      errors: {
+        archivedReadOnly: "Archived quizzes cannot be edited",
       },
     },
     quizResults: {
@@ -181,6 +190,25 @@ export const en = {
       sessionMeta: "{{count}} participants",
       loadFailed: "Failed to load results",
       sessionLoadFailed: "Failed to load session results",
+    },
+    profile: {
+      title: "Profile",
+      metaDescription: "Your account settings and quiz participation history.",
+      loadFailed: "Failed to load profile history",
+      sections: {
+        profile: "Profile",
+        settings: "Settings",
+        history: "Participation history",
+      },
+      history: {
+        empty: "You have not completed any quizzes yet.",
+        columns: {
+          quizTitle: "Quiz",
+          score: "Score",
+          correctAnswers: "Correct answers",
+          finishedAt: "Finished at",
+        },
+      },
     },
     room: {
       errors: {
@@ -260,10 +288,16 @@ export const en = {
       nav: {
         dashboard: "Dashboard",
         myQuizzes: "My quizzes",
+        joinRoom: "Join room",
         createQuiz: "Create quiz",
-        activeRooms: "Active rooms",
+        history: "History",
         results: "Results",
       },
+    },
+    language: {
+      label: "Language",
+      ru: "Русский",
+      en: "English",
     },
   },
   quizzes: {

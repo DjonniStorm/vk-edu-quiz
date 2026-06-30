@@ -72,6 +72,10 @@ const createFinishedRoomByHttp = async () => {
   );
   const quiz = await createQuizResponse.json();
 
+  await app.handle(
+    jsonRequest("PATCH", `/quizzes/${quiz.id}`, { status: "PUBLISHED" }, organizerToken),
+  );
+
   const createRoomResponse = await app.handle(
     jsonRequest("POST", "/rooms", { quizId: quiz.id }, organizerToken),
   );

@@ -331,6 +331,13 @@ export class QuizCreateStore {
     try {
       const quiz = await quizzesApi.getQuiz(quizId);
 
+      if (quiz.status === QuizStatus.Archived) {
+        runInAction(() => {
+          this.loadError = i18n.t(LANG_KEYS.pages.quizCreate.errors.archivedReadOnly);
+        });
+        return;
+      }
+
       if (quiz.hasRooms) {
         runInAction(() => {
           this.loadError = i18n.t(LANG_KEYS.pages.quizCreate.notifications.cannotEditWithRooms);
@@ -441,6 +448,26 @@ export class QuizCreateStore {
       }
 
       errorStore.pushFromUnknown(error, i18n.t(LANG_KEYS.pages.quizCreate.notifications.publishFailed));
+      return false;
+    }
+  }
+
+  async archive(): Promise<boolean> {
+    if (!this.quizId || this.loadedStatus !== QuizStatus.Published) {
+      return false;
+    }
+
+    try {
+      await quizzesApi.update(this.quizId, { status: QuizStatus.Archived });
+      notify.success(i18n.t(LANG_KEYS.pages.quizCreate.notifications.archived));
+      this.reset();
+      return true;
+    } catch (error) {
+      if (isCancelError(error)) {
+        return false;
+      }
+
+      errorStore.pushFromUnknown(error, i18n.t(LANG_KEYS.pages.quizCreate.notifications.archiveFailed));
       return false;
     }
   }

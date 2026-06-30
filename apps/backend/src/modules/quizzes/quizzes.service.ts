@@ -2,7 +2,7 @@ import { BadRequestError, NotFoundError } from "../../core/errors";
 import type { EntityId, ListQuizzesQuery, PaginatedResult } from "../../core/types";
 import type { Prisma } from "../../generated/prisma/client";
 import type { PrismaClient } from "../../generated/prisma/client";
-import { AnswerMode } from "../../generated/prisma/enums";
+import { AnswerMode, QuizStatus, RoomStatus } from "../../generated/prisma/enums";
 import type {
   CreateQuizInput,
   QuestionInput,
@@ -80,7 +80,25 @@ export class QuizServiceImpl implements QuizService {
   }
 
   async updateQuiz(ownerId: EntityId, quizId: EntityId, input: UpdateQuizInput): Promise<QuizDetails> {
-    await this.ensureOwnerQuizExists(ownerId, quizId);
+    const existing = await this.prisma.quiz.findFirst({
+      where: {
+        id: quizId,
+        ownerId,
+      },
+      select: { id: true, status: true },
+    });
+
+    if (!existing) {
+      throw new NotFoundError("Quiz not found");
+    }
+
+    if (existing.status === QuizStatus.ARCHIVED) {
+      throw new BadRequestError("Archived quiz cannot be modified");
+    }
+
+    if (input.status !== undefined && input.status !== existing.status) {
+      await this.assertValidStatusTransition(existing.status, input.status, quizId);
+    }
 
     const quiz = await this.prisma.quiz.update({
       where: { id: quizId },
@@ -170,6 +188,38 @@ export class QuizServiceImpl implements QuizService {
       allowLateJoin: source.allowLateJoin,
       questions,
     });
+  }
+
+  private async assertValidStatusTransition(
+    currentStatus: QuizStatus,
+    nextStatus: QuizStatus,
+    quizId: EntityId,
+  ): Promise<void> {
+    const allowedTransitions: Partial<Record<QuizStatus, QuizStatus[]>> = {
+      [QuizStatus.DRAFT]: [QuizStatus.PUBLISHED],
+      [QuizStatus.PUBLISHED]: [QuizStatus.ARCHIVED],
+    };
+
+    if (!allowedTransitions[currentStatus]?.includes(nextStatus)) {
+      throw new BadRequestError("Invalid quiz status transition");
+    }
+
+    if (nextStatus !== QuizStatus.ARCHIVED) {
+      return;
+    }
+
+    const activeRoomsCount = await this.prisma.room.count({
+      where: {
+        quizId,
+        status: {
+          in: [RoomStatus.WAITING, RoomStatus.ACTIVE],
+        },
+      },
+    });
+
+    if (activeRoomsCount > 0) {
+      throw new BadRequestError("Cannot archive quiz with active room");
+    }
   }
 
   private buildOwnerQuizzesWhere(

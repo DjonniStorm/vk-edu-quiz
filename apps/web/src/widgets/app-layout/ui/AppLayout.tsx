@@ -20,33 +20,52 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
-import { ROUTES } from "@/app/routes";
+import { PROFILE_HISTORY_SECTION_ID, ROUTES } from "@/app/routes";
 import { userStore } from "@/entities/user";
 
-import { navigateToSection } from "../lib/scroll-to-section";
+import { navigateToPageSection, navigateToSection } from "../lib/scroll-to-section";
 
-export type AppNavKey = "dashboard" | "myQuizzes" | "createQuiz" | "activeRooms";
+export type AppNavKey = "dashboard" | "myQuizzes" | "joinRoom" | "createQuiz" | "history";
 
 type NavItem =
   | { key: AppNavKey; label: string; kind: "section"; sectionId: string }
-  | { key: AppNavKey; label: string; kind: "route"; to: string };
+  | { key: AppNavKey; label: string; kind: "route"; to: string }
+  | {
+      key: AppNavKey;
+      label: string;
+      kind: "pageSection";
+      route: string;
+      sectionId: string;
+    };
 
 export interface AppLayoutProps extends PropsWithChildren {
   title: string;
   activeNav?: AppNavKey;
 }
 
-const resolveActiveNav = (pathname: string, hash: string, activeNav: AppNavKey): AppNavKey => {
+const resolveActiveNav = (
+  pathname: string,
+  hash: string,
+  activeNav: AppNavKey,
+): AppNavKey | null => {
   if (pathname === ROUTES.main) {
     if (hash === "#my-quizzes") {
       return "myQuizzes";
     }
 
     if (hash === "#join-room") {
-      return "activeRooms";
+      return "joinRoom";
     }
 
     return "dashboard";
+  }
+
+  if (pathname === ROUTES.profile) {
+    if (hash === `#${PROFILE_HISTORY_SECTION_ID}`) {
+      return "history";
+    }
+
+    return null;
   }
 
   return activeNav;
@@ -74,16 +93,23 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
       sectionId: "my-quizzes",
     },
     {
+      key: "joinRoom",
+      label: t(LANG_KEYS.layout.app.nav.joinRoom),
+      kind: "section",
+      sectionId: "join-room",
+    },
+    {
       key: "createQuiz",
       label: t(LANG_KEYS.layout.app.nav.createQuiz),
       kind: "route",
       to: ROUTES.quizCreate,
     },
     {
-      key: "activeRooms",
-      label: t(LANG_KEYS.layout.app.nav.activeRooms),
-      kind: "section",
-      sectionId: "join-room",
+      key: "history",
+      label: t(LANG_KEYS.layout.app.nav.history),
+      kind: "pageSection",
+      route: ROUTES.profile,
+      sectionId: PROFILE_HISTORY_SECTION_ID,
     },
   ];
   const currentActiveNav = useMemo(
@@ -99,6 +125,11 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
 
   const handleSectionClick = (sectionId: string) => {
     navigateToSection(navigate, location.pathname, sectionId);
+    closeMobileNav();
+  };
+
+  const handlePageSectionClick = (route: string, sectionId: string) => {
+    navigateToPageSection(navigate, location.pathname, route, sectionId);
     closeMobileNav();
   };
 
@@ -142,9 +173,6 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
             <Title order={4}>{title}</Title>
           </Group>
           <Group gap="md">
-            <Button variant="subtle" color="gray" px="xs">
-              {t(LANG_KEYS.layout.app.bell)}
-            </Button>
             <Button component={Link} to={ROUTES.quizCreate}>
               {t(LANG_KEYS.layout.app.createQuiz)}
             </Button>
@@ -174,7 +202,7 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
 
           <Stack gap={4} px="sm" py="lg">
             {navItems.map((item) => {
-              const isActive = item.key === currentActiveNav;
+              const isActive = currentActiveNav !== null && item.key === currentActiveNav;
 
               if (item.kind === "route") {
                 return (
@@ -186,6 +214,22 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
                     py="sm"
                     style={navButtonStyle(isActive)}
                     onClick={closeMobileNav}
+                  >
+                    <Text size="sm" fw={isActive ? 700 : 500}>
+                      {item.label}
+                    </Text>
+                  </UnstyledButton>
+                );
+              }
+
+              if (item.kind === "pageSection") {
+                return (
+                  <UnstyledButton
+                    key={item.key}
+                    px="md"
+                    py="sm"
+                    style={navButtonStyle(isActive)}
+                    onClick={() => handlePageSectionClick(item.route, item.sectionId)}
                   >
                     <Text size="sm" fw={isActive ? 700 : 500}>
                       {item.label}
@@ -213,19 +257,30 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
           <Box mt="auto">
             <Divider />
             <Stack gap="sm" p="lg">
-              <Group gap="sm" wrap="nowrap">
-                <Avatar radius="xl" color="gray">
-                  {userInitials || "U"}
-                </Avatar>
-                <Box style={{ minWidth: 0 }}>
-                  <Text size="sm" fw={700} lineClamp={1}>
-                    {currentUser?.name ?? t(LANG_KEYS.layout.app.fallbackUser)}
-                  </Text>
-                  <Text size="xs" c="dimmed">
-                    {roleLabel}
-                  </Text>
-                </Box>
-              </Group>
+              <UnstyledButton
+                component={Link}
+                to={ROUTES.profile}
+                onClick={closeMobileNav}
+                style={{
+                  borderRadius: 8,
+                  textDecoration: "none",
+                  color: "inherit",
+                }}
+              >
+                <Group gap="sm" wrap="nowrap">
+                  <Avatar radius="xl" color="gray">
+                    {userInitials || "U"}
+                  </Avatar>
+                  <Box style={{ minWidth: 0 }}>
+                    <Text size="sm" fw={700} lineClamp={1}>
+                      {currentUser?.name ?? t(LANG_KEYS.layout.app.fallbackUser)}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {roleLabel}
+                    </Text>
+                  </Box>
+                </Group>
+              </UnstyledButton>
               <Button variant="light" color="gray" fullWidth onClick={handleLogout}>
                 {t(LANG_KEYS.layout.app.exit)}
               </Button>

@@ -2,15 +2,15 @@ import type {
   OrganizerHistorySummaryDto,
   OrganizerRoomHistoryItemDto,
   PaginatedResult,
+  PaginationQuery,
+  ParticipantQuizHistoryItemDto,
   RoomResultsDto,
 } from "@quiz/shared";
 
 import { BaseApi } from "../base-api";
 
-export interface ListOrganizerHistoryQuery {
-  limit?: number;
-  offset?: number;
-}
+export type ListParticipantHistoryQuery = PaginationQuery;
+export type ListOrganizerHistoryQuery = PaginationQuery;
 
 class HistoryApi extends BaseApi {
   private static instance: HistoryApi;
@@ -25,6 +25,17 @@ class HistoryApi extends BaseApi {
     }
 
     return HistoryApi.instance;
+  }
+
+  async listParticipant(
+    query: ListParticipantHistoryQuery = {},
+  ): Promise<PaginatedResult<ParticipantQuizHistoryItemDto>> {
+    const { data } = await this.get<PaginatedResult<ParticipantQuizHistoryItemDto>>("/participant", {
+      params: query,
+      meta: { level: "blocking" },
+    });
+
+    return data;
   }
 
   async getOrganizerSummary(): Promise<OrganizerHistorySummaryDto> {

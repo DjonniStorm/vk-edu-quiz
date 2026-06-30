@@ -1,4 +1,5 @@
 import { Alert, Button, Center, Group, Loader, Paper, Stack, Stepper, Text, Title } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { QuizStatus } from "@quiz/shared";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
@@ -38,6 +39,29 @@ export const QuizCreatePage = observer(() => {
 
   const handleSaveDraft = () => {
     void quizCreateStore.saveDraft();
+  };
+
+  const handleArchive = () => {
+    modals.openConfirmModal({
+      title: t(LANG_KEYS.pages.quizCreate.archiveConfirmTitle),
+      children: (
+        <Text size="sm" c="dimmed">
+          {t(LANG_KEYS.pages.quizCreate.archiveConfirmBody)}
+        </Text>
+      ),
+      labels: {
+        confirm: t(LANG_KEYS.pages.quizCreate.archive),
+        cancel: t(LANG_KEYS.common.cancel),
+      },
+      confirmProps: { color: "red" },
+      onConfirm: () => {
+        void quizCreateStore.archive().then((isSuccess) => {
+          if (isSuccess) {
+            navigate(ROUTES.main, { replace: true });
+          }
+        });
+      },
+    });
   };
 
   const handleNext = () => {
@@ -108,9 +132,16 @@ export const QuizCreatePage = observer(() => {
             <Title order={2}>{pageTitle}</Title>
             <Text c="dimmed">{pageSubtitle}</Text>
           </Stack>
-          <Button variant="default" onClick={handleSaveDraft}>
-            {t(LANG_KEYS.pages.quizCreate.saveDraft)}
-          </Button>
+          <Group gap="sm">
+            {isEditMode && loadedStatus === QuizStatus.Published ? (
+              <Button variant="subtle" color="gray" onClick={handleArchive}>
+                {t(LANG_KEYS.pages.quizCreate.archive)}
+              </Button>
+            ) : null}
+            <Button variant="default" onClick={handleSaveDraft}>
+              {t(LANG_KEYS.pages.quizCreate.saveDraft)}
+            </Button>
+          </Group>
         </Group>
 
         <Stepper active={activeStep} onStepClick={(step) => quizCreateStore.setStep(step)}>

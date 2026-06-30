@@ -21,6 +21,21 @@ const createAuthService = () =>
     new JwtAuthTokenService("test-secret-change-me", 60),
   );
 
+const expectRejectedWith = async (
+  action: Promise<unknown>,
+  ErrorClass: new (...args: never[]) => Error,
+): Promise<void> => {
+  let caughtError: unknown;
+
+  try {
+    await action;
+  } catch (error) {
+    caughtError = error;
+  }
+
+  expect(caughtError).toBeInstanceOf(ErrorClass);
+};
+
 afterEach(async () => {
   await deleteTestUsersByEmail(createdEmails);
   createdEmails.length = 0;
@@ -72,13 +87,14 @@ describe("AuthServiceImpl", () => {
       name: "Test User",
     });
 
-    await expect(
+    await expectRejectedWith(
       authService.register({
         email: email.toUpperCase(),
         password: "password-456",
         name: "Another User",
       }),
-    ).rejects.toBeInstanceOf(ConflictError);
+      ConflictError,
+    );
   });
 
   it("логинит с верными данными и отклоняет неверный пароль", async () => {
@@ -102,11 +118,12 @@ describe("AuthServiceImpl", () => {
     expect(loginResult.user.id).toBe(registered.user.id);
     expect(loginResult.tokens.accessToken).toEqual(expect.any(String));
 
-    await expect(
+    await expectRejectedWith(
       authService.login({
         email,
         password: "wrong-password",
       }),
-    ).rejects.toBeInstanceOf(UnauthorizedError);
+      UnauthorizedError,
+    );
   });
 });

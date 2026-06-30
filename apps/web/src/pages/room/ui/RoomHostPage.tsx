@@ -77,7 +77,7 @@ export const RoomHostPage = observer(() => {
     totalQuestions > 0 ? (currentQuestionNumber / totalQuestions) * 100 : 0;
 
   return (
-    <AppLayout title={quizTitle || t(LANG_KEYS.layout.app.nav.activeRooms)} activeNav="activeRooms">
+    <AppLayout title={quizTitle || t(LANG_KEYS.pages.room.host.metaTitle)}>
       <Container size="xl">
         <Stack gap="lg">
           {loadError ? <Alert color="red">{loadError}</Alert> : null}

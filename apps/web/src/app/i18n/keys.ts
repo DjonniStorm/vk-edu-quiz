@@ -97,6 +97,9 @@ export const LANG_KEYS = {
       subtitle: "pages.quizCreate.subtitle",
       editSubtitle: "pages.quizCreate.editSubtitle",
       saveDraft: "pages.quizCreate.saveDraft",
+      archive: "pages.quizCreate.archive",
+      archiveConfirmTitle: "pages.quizCreate.archiveConfirmTitle",
+      archiveConfirmBody: "pages.quizCreate.archiveConfirmBody",
       steps: {
         basicInfo: "pages.quizCreate.steps.basicInfo",
         questions: "pages.quizCreate.steps.questions",
@@ -171,6 +174,11 @@ export const LANG_KEYS = {
         publishFailed: "pages.quizCreate.notifications.publishFailed",
         loadFailed: "pages.quizCreate.notifications.loadFailed",
         cannotEditWithRooms: "pages.quizCreate.notifications.cannotEditWithRooms",
+        archived: "pages.quizCreate.notifications.archived",
+        archiveFailed: "pages.quizCreate.notifications.archiveFailed",
+      },
+      errors: {
+        archivedReadOnly: "pages.quizCreate.errors.archivedReadOnly",
       },
     },
     quizResults: {
@@ -181,6 +189,25 @@ export const LANG_KEYS = {
       sessionMeta: "pages.quizResults.sessionMeta",
       loadFailed: "pages.quizResults.loadFailed",
       sessionLoadFailed: "pages.quizResults.sessionLoadFailed",
+    },
+    profile: {
+      title: "pages.profile.title",
+      metaDescription: "pages.profile.metaDescription",
+      loadFailed: "pages.profile.loadFailed",
+      sections: {
+        profile: "pages.profile.sections.profile",
+        settings: "pages.profile.sections.settings",
+        history: "pages.profile.sections.history",
+      },
+      history: {
+        empty: "pages.profile.history.empty",
+        columns: {
+          quizTitle: "pages.profile.history.columns.quizTitle",
+          score: "pages.profile.history.columns.score",
+          correctAnswers: "pages.profile.history.columns.correctAnswers",
+          finishedAt: "pages.profile.history.columns.finishedAt",
+        },
+      },
     },
     room: {
       errors: {
@@ -260,10 +287,16 @@ export const LANG_KEYS = {
       nav: {
         dashboard: "layout.app.nav.dashboard",
         myQuizzes: "layout.app.nav.myQuizzes",
+        joinRoom: "layout.app.nav.joinRoom",
         createQuiz: "layout.app.nav.createQuiz",
-        activeRooms: "layout.app.nav.activeRooms",
+        history: "layout.app.nav.history",
         results: "layout.app.nav.results",
       },
+    },
+    language: {
+      label: "layout.language.label",
+      ru: "layout.language.ru",
+      en: "layout.language.en",
     },
   },
   quizzes: {
