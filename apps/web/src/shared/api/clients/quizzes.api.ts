@@ -85,6 +85,14 @@ class QuizzesApi extends BaseApi {
 
     return data;
   }
+
+  async getQuiz(quizId: string): Promise<QuizDetailsDto> {
+    const { data } = await this.get<QuizDetailsDto>(`/${quizId}`, {
+      meta: { level: "blocking" },
+    });
+
+    return data;
+  }
 }
 
 export const quizzesApi = QuizzesApi.getInstance();

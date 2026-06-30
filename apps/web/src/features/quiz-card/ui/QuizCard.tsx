@@ -1,7 +1,12 @@
+import { useState } from "react";
 import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { buildRoomHostPath } from "@/app/routes";
+import { errorStore } from "@/entities/error";
+import { getApiErrorMessage, isCancelError, roomsApi } from "@/shared/api";
 import type { DashboardQuizDto, DashboardQuizStatus } from "@/shared/services";
 
 export interface QuizCardProps {
@@ -16,7 +21,26 @@ const statusColor: Record<DashboardQuizStatus, string> = {
 
 export const QuizCard = ({ quiz }: QuizCardProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const statusLabel = t(LANG_KEYS.quizzes.status[quiz.status]);
+
+  const openRoom = async () => {
+    setIsCreatingRoom(true);
+
+    try {
+      const room = await roomsApi.create({ quizId: quiz.id });
+      navigate(buildRoomHostPath(room.id));
+    } catch (error) {
+      if (isCancelError(error)) {
+        return;
+      }
+
+      errorStore.push(getApiErrorMessage(error, t(LANG_KEYS.pages.room.errors.startFailed)));
+    } finally {
+      setIsCreatingRoom(false);
+    }
+  };
 
   return (
     <Card radius="md" withBorder padding={0}>
@@ -53,7 +77,9 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
             <Button color="red" variant="subtle">
               {t(LANG_KEYS.quizzes.actions.finish)}
             </Button>
-            <Button>{t(LANG_KEYS.quizzes.actions.room)}</Button>
+            <Button loading={isCreatingRoom} onClick={() => void openRoom()}>
+              {t(LANG_KEYS.quizzes.actions.room)}
+            </Button>
           </>
         ) : quiz.status === "draft" ? (
           <>
@@ -66,7 +92,9 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
               <Button variant="default">{t(LANG_KEYS.quizzes.actions.edit)}</Button>
               <Button variant="subtle">{t(LANG_KEYS.quizzes.actions.results)}</Button>
             </Group>
-            <Button>{t(LANG_KEYS.quizzes.actions.start)}</Button>
+            <Button loading={isCreatingRoom} onClick={() => void openRoom()}>
+              {t(LANG_KEYS.quizzes.actions.start)}
+            </Button>
           </>
         )}
       </Group>

@@ -5,6 +5,7 @@ import { requireCurrentUser } from "../../plugins/auth-guards";
 import type { RoomService } from "./rooms.interfaces";
 import {
   createRoomSchema,
+  currentQuestionQuerySchema,
   joinRoomSchema,
   leaveRoomSchema,
   showQuestionSchema,
@@ -34,6 +35,17 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
       detail: {
         tags: ["Rooms"],
         summary: "Get room summary",
+      },
+    })
+    .get("/:roomId/current-question", ({ params, query }) => {
+      const input = currentQuestionQuerySchema.parse(query);
+
+      return roomService.getCurrentQuestion(params.roomId, input.roomParticipantId);
+    }, {
+      detail: {
+        tags: ["Rooms"],
+        summary: "Get current live question",
+        description: "Returns the active question snapshot for reconnecting clients.",
       },
     })
     .post("/:roomId/join", async ({ headers, params, body }) => {

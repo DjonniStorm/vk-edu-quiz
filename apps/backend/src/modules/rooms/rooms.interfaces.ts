@@ -73,9 +73,19 @@ export interface AnswerResult {
   points: number;
 }
 
+export interface CurrentQuestionState {
+  question: LiveQuestion | null;
+  answeredCount: number;
+  participantHasAnswered: boolean;
+}
+
 export interface RoomService {
   createRoom(organizerId: EntityId, input: CreateRoomInput): Promise<RoomSummary>;
   getRoom(roomId: EntityId): Promise<RoomSummary | null>;
+  getCurrentQuestion(
+    roomId: EntityId,
+    roomParticipantId?: EntityId,
+  ): Promise<CurrentQuestionState>;
   joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails>;
   leaveRoom(roomParticipantId: EntityId): Promise<void>;
   startRoom(organizerId: EntityId, roomId: EntityId): Promise<LiveQuestion | null>;

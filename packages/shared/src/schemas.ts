@@ -66,3 +66,7 @@ export const submitAnswerSchema = z.object({
   answerOptionIds: z.array(entityIdSchema).min(1),
   answerTimeMs: z.number().int().min(0),
 });
+
+export const currentQuestionQuerySchema = z.object({
+  roomParticipantId: entityIdSchema.optional(),
+});

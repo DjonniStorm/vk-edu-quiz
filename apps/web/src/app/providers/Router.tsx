@@ -38,6 +38,22 @@ const QuizCreatePage = lazy(async () => {
   };
 });
 
+const RoomPlayPage = lazy(async () => {
+  const module = await import("@/pages/room");
+
+  return {
+    default: module.RoomPlayPage,
+  };
+});
+
+const RoomHostPage = lazy(async () => {
+  const module = await import("@/pages/room");
+
+  return {
+    default: module.RoomHostPage,
+  };
+});
+
 const router = createBrowserRouter([
   {
     path: ROUTES.main,
@@ -71,6 +87,24 @@ const router = createBrowserRouter([
       <LazyPage>
         <ProtectedRoute>
           <QuizCreatePage />
+        </ProtectedRoute>
+      </LazyPage>
+    ),
+  },
+  {
+    path: ROUTES.roomPlay,
+    element: (
+      <LazyPage>
+        <RoomPlayPage />
+      </LazyPage>
+    ),
+  },
+  {
+    path: ROUTES.roomHost,
+    element: (
+      <LazyPage>
+        <ProtectedRoute>
+          <RoomHostPage />
         </ProtectedRoute>
       </LazyPage>
     ),

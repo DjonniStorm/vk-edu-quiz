@@ -72,6 +72,12 @@ export interface RoomSummaryDto {
   inviteUrl: string;
 }
 
+export interface CurrentQuestionStateDto {
+  question: LiveQuestionDto | null;
+  answeredCount: number;
+  participantHasAnswered: boolean;
+}
+
 export interface RoomParticipantDto {
   id: EntityId;
   userId: EntityId | null;

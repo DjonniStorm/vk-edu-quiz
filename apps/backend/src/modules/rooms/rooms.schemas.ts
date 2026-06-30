@@ -1,5 +1,6 @@
 export {
   createRoomSchema,
+  currentQuestionQuerySchema,
   joinRoomSchema,
   leaveRoomSchema,
   showQuestionSchema,

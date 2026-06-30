@@ -7,8 +7,18 @@ export type {
   CreateQuizInput,
   QuestionInput,
   QuizDetailsDto,
+  QuestionDetailsDto,
   UpdateQuizInput,
 } from "./clients/quizzes.api";
+export { roomsApi } from "./clients/rooms.api";
+export type {
+  AnswerResultDto,
+  CreateRoomInput,
+  JoinRoomInput,
+  ShowQuestionInput,
+  SubmitAnswerInput,
+} from "./clients/rooms.api";
+export type { CurrentQuestionStateDto } from "@quiz/shared";
 export { authTokenStorage, httpClient } from "./http-client";
 export { loaderStore } from "./loader.store";
 export type { LoaderLevel, RequestMeta } from "./loader.store";

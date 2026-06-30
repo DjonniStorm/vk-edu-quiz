@@ -6,6 +6,7 @@ import { RealtimeEventType, type RealtimeGateway } from "../realtime/realtime.in
 import type {
   AnswerResult,
   CreateRoomInput,
+  CurrentQuestionState,
   JoinRoomInput,
   LeaderboardItem,
   LiveQuestion,
@@ -53,6 +54,74 @@ export class RoomServiceImpl implements RoomService {
     return room ? RoomMapper.toRoomSummary(room) : null;
   }
 
+  async getCurrentQuestion(
+    roomId: EntityId,
+    roomParticipantId?: EntityId,
+  ): Promise<CurrentQuestionState> {
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: {
+        id: true,
+        status: true,
+        currentQuestionId: true,
+        currentQuestionStartedAt: true,
+      },
+    });
+
+    if (
+      !room ||
+      room.status !== RoomStatus.ACTIVE ||
+      !room.currentQuestionId ||
+      !room.currentQuestionStartedAt
+    ) {
+      return {
+        question: null,
+        answeredCount: 0,
+        participantHasAnswered: false,
+      };
+    }
+
+    const question = await this.prisma.question.findFirst({
+      where: { id: room.currentQuestionId },
+      include: this.liveQuestionInclude(),
+    });
+
+    if (!question) {
+      return {
+        question: null,
+        answeredCount: 0,
+        participantHasAnswered: false,
+      };
+    }
+
+    const answeredCount = await this.prisma.participantAnswer.count({
+      where: {
+        roomId,
+        questionId: room.currentQuestionId,
+      },
+    });
+
+    let participantHasAnswered = false;
+
+    if (roomParticipantId) {
+      const existingAnswer = await this.prisma.participantAnswer.findFirst({
+        where: {
+          roomParticipantId,
+          questionId: room.currentQuestionId,
+        },
+        select: { id: true },
+      });
+
+      participantHasAnswered = !!existingAnswer;
+    }
+
+    return {
+      question: RoomMapper.toLiveQuestion(question, room.currentQuestionStartedAt),
+      answeredCount,
+      participantHasAnswered,
+    };
+  }
+
   async joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails> {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
@@ -91,6 +160,16 @@ export class RoomServiceImpl implements RoomService {
       participant: mappedParticipant,
     });
 
+    const currentQuestionState = await this.getCurrentQuestion(roomId, participant.id);
+
+    if (currentQuestionState.question) {
+      this.realtimeGateway.publishToParticipant(participant.id, {
+        type: RealtimeEventType.QuestionShown,
+        roomId,
+        question: currentQuestionState.question,
+      });
+    }
+
     return mappedParticipant;
   }
 
@@ -128,6 +207,7 @@ export class RoomServiceImpl implements RoomService {
         status: RoomStatus.ACTIVE,
         startedAt,
         currentQuestionId: firstQuestion?.id ?? null,
+        currentQuestionStartedAt: firstQuestion ? startedAt : null,
       },
     });
 
@@ -169,7 +249,10 @@ export class RoomServiceImpl implements RoomService {
 
     await this.prisma.room.update({
       where: { id: roomId },
-      data: { currentQuestionId: question.id },
+      data: {
+        currentQuestionId: question.id,
+        currentQuestionStartedAt: startedAt,
+      },
     });
 
     const liveQuestion = RoomMapper.toLiveQuestion(question, startedAt);
@@ -347,6 +430,7 @@ export class RoomServiceImpl implements RoomService {
           data: {
             status: RoomStatus.FINISHED,
             currentQuestionId: null,
+            currentQuestionStartedAt: null,
             finishedAt: new Date(),
           },
         }),
