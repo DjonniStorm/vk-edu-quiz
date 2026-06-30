@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import { getApiErrorMessage } from "@/shared/api";
-import { showErrorNotification } from "@/shared/lib";
+import { notify } from "@/shared/lib";
 
 export interface AppErrorItem {
   id: string;
@@ -24,7 +24,7 @@ export class ErrorStore {
     };
 
     this.errors.push(item);
-    showErrorNotification(message);
+    notify.error(message);
 
     return item.id;
   }

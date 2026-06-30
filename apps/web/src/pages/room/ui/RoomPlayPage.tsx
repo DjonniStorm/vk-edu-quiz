@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { usePageHead } from "@/app/seo";
 import { ROUTES } from "@/app/routes";
 
 import { roomStore } from "../model/room.store";
@@ -44,7 +45,17 @@ export const RoomPlayPage = observer(() => {
     loadError,
     wsConnected,
     displayName,
+    quizTitle,
   } = roomStore;
+
+  const pageTitle = quizTitle
+    ? t(LANG_KEYS.pages.room.play.titleWithQuiz, { title: quizTitle })
+    : t(LANG_KEYS.pages.room.play.metaTitle);
+
+  usePageHead({
+    title: pageTitle,
+    description: t(LANG_KEYS.pages.room.play.joinSubtitle),
+  });
 
   const resultText = lastAnswerResult
     ? lastAnswerResult.isCorrect

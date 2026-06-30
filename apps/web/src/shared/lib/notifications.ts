@@ -1,63 +1,60 @@
 import { notifications } from "@mantine/notifications";
 
-export type AppNotificationType = "error" | "success" | "info" | "warning";
+import i18n, { LANG_KEYS } from "@/app/i18n";
 
-export interface AppNotificationInput {
-  type: AppNotificationType;
-  message: string;
-  title?: string;
-}
+type NotificationType = "error" | "success" | "info" | "warning";
 
-const NOTIFICATION_PRESETS: Record<
-  AppNotificationType,
-  { color: string; title: string; autoClose: number }
-> = {
+const PRESETS: Record<NotificationType, { color: string; titleKey: string; autoClose: number }> = {
   error: {
     color: "red",
-    title: "Ошибка",
+    titleKey: LANG_KEYS.notifications.titles.error,
     autoClose: 6000,
   },
   success: {
     color: "green",
-    title: "Успешно",
+    titleKey: LANG_KEYS.notifications.titles.success,
     autoClose: 4000,
   },
   info: {
     color: "blue",
-    title: "Информация",
+    titleKey: LANG_KEYS.notifications.titles.info,
     autoClose: 4000,
   },
   warning: {
     color: "yellow",
-    title: "Внимание",
+    titleKey: LANG_KEYS.notifications.titles.warning,
     autoClose: 5000,
   },
 };
 
-export const showAppNotification = ({ type, message, title }: AppNotificationInput): void => {
-  const preset = NOTIFICATION_PRESETS[type];
+class Notify {
+  private static show(type: NotificationType, message: string, title?: string): void {
+    const preset = PRESETS[type];
 
-  notifications.show({
-    title: title ?? preset.title,
-    message,
-    color: preset.color,
-    withBorder: true,
-    autoClose: preset.autoClose,
-  });
-};
+    notifications.show({
+      title: title ?? i18n.t(preset.titleKey),
+      message,
+      color: preset.color,
+      withBorder: true,
+      autoClose: preset.autoClose,
+    });
+  }
 
-export const showErrorNotification = (message: string, title?: string): void => {
-  showAppNotification({ type: "error", message, title });
-};
+  static error(message: string, title?: string): void {
+    Notify.show("error", message, title);
+  }
 
-export const showSuccessNotification = (message: string, title?: string): void => {
-  showAppNotification({ type: "success", message, title });
-};
+  static success(message: string, title?: string): void {
+    Notify.show("success", message, title);
+  }
 
-export const showInfoNotification = (message: string, title?: string): void => {
-  showAppNotification({ type: "info", message, title });
-};
+  static info(message: string, title?: string): void {
+    Notify.show("info", message, title);
+  }
 
-export const showWarningNotification = (message: string, title?: string): void => {
-  showAppNotification({ type: "warning", message, title });
-};
+  static warning(message: string, title?: string): void {
+    Notify.show("warning", message, title);
+  }
+}
+
+export { Notify as notify };

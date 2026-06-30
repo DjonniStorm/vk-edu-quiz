@@ -82,6 +82,7 @@ export interface CurrentQuestionState {
 
 export interface AnswerSubmission {
   displayName: string;
+  email: string | null;
   answerOptionIds: EntityId[];
 }
 
@@ -96,6 +97,13 @@ export interface HostQuestionState {
   correctOptionIds?: EntityId[];
 }
 
+export interface HostParticipant {
+  id: EntityId;
+  displayName: string;
+  email: string | null;
+  status: AppParticipantStatus;
+}
+
 export interface RoomService {
   createRoom(organizerId: EntityId, input: CreateRoomInput): Promise<RoomSummary>;
   getRoom(roomId: EntityId): Promise<RoomSummary | null>;
@@ -104,6 +112,7 @@ export interface RoomService {
     roomParticipantId?: EntityId,
   ): Promise<CurrentQuestionState>;
   getHostState(organizerId: EntityId, roomId: EntityId): Promise<HostQuestionState>;
+  getHostParticipants(organizerId: EntityId, roomId: EntityId): Promise<HostParticipant[]>;
   joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails>;
   leaveRoom(roomParticipantId: EntityId): Promise<void>;
   startRoom(organizerId: EntityId, roomId: EntityId): Promise<LiveQuestion | null>;

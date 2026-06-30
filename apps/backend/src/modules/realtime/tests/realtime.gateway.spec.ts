@@ -25,6 +25,7 @@ const createAnswerSubmittedEvent = (roomId: string, answeredCount: number): Real
   submission: {
     roomParticipantId: crypto.randomUUID(),
     displayName: "Test",
+    email: null,
     answerOptionIds: [crypto.randomUUID()],
   },
 });

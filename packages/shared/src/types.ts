@@ -81,6 +81,7 @@ export interface CurrentQuestionStateDto {
 
 export interface AnswerSubmissionDto {
   displayName: string;
+  email: string | null;
   answerOptionIds: EntityId[];
 }
 
@@ -103,6 +104,13 @@ export interface RoomParticipantDto {
   score: number;
   correctAnswersCount: number;
   totalAnswerTimeMs: number;
+}
+
+export interface HostParticipantDto {
+  id: EntityId;
+  displayName: string;
+  email: string | null;
+  status: ParticipantStatus;
 }
 
 export interface QuizListItemDto {

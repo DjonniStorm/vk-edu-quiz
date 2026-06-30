@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import { useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { usePageHead } from "@/app/seo";
 import { LeaderboardList } from "@/pages/room/ui/components/LeaderboardList";
 import { AppLayout } from "@/widgets/app-layout";
 
@@ -47,6 +48,11 @@ export const QuizResultsPage = observer(() => {
   const pageTitle = quizTitle
     ? t(LANG_KEYS.pages.quizResults.titleWithQuiz, { title: quizTitle })
     : t(LANG_KEYS.pages.quizResults.title);
+
+  usePageHead({
+    title: pageTitle,
+    description: t(LANG_KEYS.pages.quizResults.subtitle),
+  });
 
   if (isLoading) {
     return (

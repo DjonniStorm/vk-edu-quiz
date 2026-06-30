@@ -1,8 +1,9 @@
 import { Button, Group, Paper, Stack, Text, TextInput } from "@mantine/core";
+import type { HostParticipantDto } from "@quiz/shared";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
-import { showSuccessNotification } from "@/shared/lib";
+import { notify } from "@/shared/lib";
 
 export interface HostControlsProps {
   isWaiting: boolean;
@@ -11,6 +12,7 @@ export interface HostControlsProps {
   hasQuestion: boolean;
   answeredCount: number;
   activeParticipantCount: number;
+  hostParticipants: HostParticipantDto[];
   inviteUrl: string;
   isActionPending: boolean;
   isQuestionClosing: boolean;
@@ -27,6 +29,7 @@ export const HostControls = ({
   hasQuestion,
   answeredCount,
   activeParticipantCount,
+  hostParticipants,
   inviteUrl,
   isActionPending,
   isQuestionClosing,
@@ -39,7 +42,7 @@ export const HostControls = ({
 
   const handleCopy = async () => {
     await onCopyLink();
-    showSuccessNotification(t(LANG_KEYS.pages.room.host.linkCopied));
+    notify.success(t(LANG_KEYS.pages.room.host.linkCopied));
   };
 
   if (isFinished) {
@@ -54,6 +57,31 @@ export const HostControls = ({
             <Text size="sm" c="dimmed">
               {t(LANG_KEYS.pages.room.host.waitingSubtitle)}
             </Text>
+            {hostParticipants.length > 0 ? (
+              <Stack gap="xs">
+                <Text fw={600} size="sm">
+                  {t(LANG_KEYS.pages.room.host.participantsTitle, {
+                    count: hostParticipants.length,
+                  })}
+                </Text>
+                {hostParticipants.map((participant) => (
+                  <Stack key={participant.id} gap={0}>
+                    <Text size="sm" fw={600}>
+                      {participant.displayName}
+                    </Text>
+                    {participant.email ? (
+                      <Text size="xs" c="dimmed">
+                        {participant.email}
+                      </Text>
+                    ) : null}
+                  </Stack>
+                ))}
+              </Stack>
+            ) : (
+              <Text size="sm" c="dimmed">
+                {t(LANG_KEYS.pages.room.host.participantsEmpty)}
+              </Text>
+            )}
             <TextInput label={t(LANG_KEYS.pages.room.host.inviteLink)} value={inviteUrl} readOnly />
             <Button variant="default" onClick={() => void handleCopy()}>
               {t(LANG_KEYS.pages.room.host.copyLink)}

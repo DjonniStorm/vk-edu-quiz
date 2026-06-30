@@ -122,6 +122,17 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
         security: [{ BearerAuth: [] }],
       },
     })
+    .get("/:roomId/host/participants", async ({ headers, params }) => {
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
+
+      return roomService.getHostParticipants(currentUser.id, params.roomId);
+    }, {
+      detail: {
+        tags: ["Rooms"],
+        summary: "Get host participants list",
+        security: [{ BearerAuth: [] }],
+      },
+    })
     .post("/:roomId/answers", ({ params, body }) =>
       roomService.submitAnswer(params.roomId, submitAnswerSchema.parse(body)),
       {

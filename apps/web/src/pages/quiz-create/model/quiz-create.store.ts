@@ -5,7 +5,7 @@ import { LANG_KEYS } from "@/app/i18n";
 import i18n from "@/app/i18n";
 import { errorStore } from "@/entities/error";
 import { getApiErrorMessage, isCancelError, quizzesApi } from "@/shared/api";
-import { showSuccessNotification, showWarningNotification } from "@/shared/lib";
+import { notify } from "@/shared/lib";
 
 import {
   mapDraftToCreateInput,
@@ -249,7 +249,7 @@ export class QuizCreateStore {
       .safeParse({ title: this.draft.title.trim() });
 
     if (!result.success && showWarnings) {
-      showWarningNotification(i18n.t(LANG_KEYS.pages.quizCreate.validation.titleRequired));
+      notify.warning(i18n.t(LANG_KEYS.pages.quizCreate.validation.titleRequired));
     }
 
     return result.success;
@@ -258,7 +258,7 @@ export class QuizCreateStore {
   private areQuestionsValid(showWarnings: boolean): boolean {
     if (this.draft.questions.length === 0) {
       if (showWarnings) {
-        showWarningNotification(i18n.t(LANG_KEYS.pages.quizCreate.validation.questionsRequired));
+        notify.warning(i18n.t(LANG_KEYS.pages.quizCreate.validation.questionsRequired));
       }
 
       return false;
@@ -281,7 +281,7 @@ export class QuizCreateStore {
 
       if (!result.success) {
         if (showWarnings) {
-          showWarningNotification(
+          notify.warning(
             i18n.t(LANG_KEYS.pages.quizCreate.validation.questionInvalid, { number: index + 1 }),
           );
           this.selectedQuestionClientId = question.clientId;
@@ -292,7 +292,7 @@ export class QuizCreateStore {
 
       if (!question.answerOptions.some((option) => option.isCorrect)) {
         if (showWarnings) {
-          showWarningNotification(
+          notify.warning(
             i18n.t(LANG_KEYS.pages.quizCreate.validation.correctAnswerRequired, {
               number: index + 1,
             }),
@@ -308,7 +308,7 @@ export class QuizCreateStore {
 
         if (correctCount !== 1) {
           if (showWarnings) {
-            showWarningNotification(
+            notify.warning(
               i18n.t(LANG_KEYS.pages.quizCreate.validation.singleCorrectRequired, {
                 number: index + 1,
               }),
@@ -372,7 +372,7 @@ export class QuizCreateStore {
     const hasPartialQuestions = this.hasPartialQuestions();
 
     if (hasPartialQuestions && !questionsValid) {
-      showWarningNotification(i18n.t(LANG_KEYS.pages.quizCreate.validation.questionsIncomplete));
+      notify.warning(i18n.t(LANG_KEYS.pages.quizCreate.validation.questionsIncomplete));
       return false;
     }
 
@@ -397,7 +397,7 @@ export class QuizCreateStore {
         }
       }
 
-      showSuccessNotification(
+      notify.success(
         i18n.t(
           questionsPayload
             ? LANG_KEYS.pages.quizCreate.notifications.draftSaved
@@ -432,7 +432,7 @@ export class QuizCreateStore {
 
     try {
       await quizzesApi.update(this.quizId, { status: QuizStatus.Published });
-      showSuccessNotification(i18n.t(LANG_KEYS.pages.quizCreate.notifications.published));
+      notify.success(i18n.t(LANG_KEYS.pages.quizCreate.notifications.published));
       this.reset();
       return true;
     } catch (error) {

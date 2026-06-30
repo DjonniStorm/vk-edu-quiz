@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { usePageHead } from "@/app/seo";
 import { ROUTES } from "@/app/routes";
 import { AppLayout } from "@/widgets/app-layout";
 
@@ -54,7 +55,17 @@ export const RoomHostPage = observer(() => {
     isFinished,
     loadError,
     wsConnected,
+    hostParticipants,
   } = roomStore;
+
+  const pageTitle = quizTitle
+    ? t(LANG_KEYS.pages.room.host.titleWithQuiz, { title: quizTitle })
+    : t(LANG_KEYS.pages.room.host.metaTitle);
+
+  usePageHead({
+    title: pageTitle,
+    description: t(LANG_KEYS.pages.room.host.waitingSubtitle),
+  });
 
   const progressValue =
     totalQuestions > 0 ? (currentQuestionNumber / totalQuestions) * 100 : 0;
@@ -129,6 +140,7 @@ export const RoomHostPage = observer(() => {
                       hasQuestion={Boolean(currentQuestion)}
                       answeredCount={answeredCount}
                       activeParticipantCount={activeParticipantCount}
+                      hostParticipants={hostParticipants}
                       inviteUrl={inviteUrl}
                       isActionPending={isActionPending}
                       isQuestionClosing={isQuestionClosing}

@@ -9,7 +9,7 @@ import { buildQuizEditPath, buildQuizResultsPath, buildRoomHostPath } from "@/ap
 import { QUIZ_STATUS_COLOR, QUIZ_STATUS_LABEL_KEY } from "@/features/quiz-card/model/quiz-status.ui";
 import { errorStore } from "@/entities/error";
 import { getApiErrorMessage, isCancelError, quizzesApi, roomsApi } from "@/shared/api";
-import { showSuccessNotification } from "@/shared/lib";
+import { notify } from "@/shared/lib";
 import type { DashboardQuizDto } from "@/shared/services";
 
 export interface QuizCardProps {
@@ -52,7 +52,7 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
 
     try {
       const copy = await quizzesApi.duplicate(quiz.id);
-      showSuccessNotification(t(LANG_KEYS.quizzes.notifications.duplicated));
+      notify.success(t(LANG_KEYS.quizzes.notifications.duplicated));
       navigate(buildQuizEditPath(copy.id));
     } catch (error) {
       if (isCancelError(error)) {

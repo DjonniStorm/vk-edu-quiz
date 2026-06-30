@@ -22,5 +22,9 @@ export const buildDashboardStats = (
   { id: "total-quizzes", value: String(quizzesTotal) },
   { id: "completed-sessions", value: String(summary.completedSessions) },
   { id: "participants", value: String(summary.totalParticipants) },
-  { id: "average-score", value: String(Math.round(summary.averageScore)) },
+  {
+    id: "average-score",
+    value:
+      summary.completedSessions === 0 ? "—" : String(Math.round(summary.averageScore)),
+  },
 ];

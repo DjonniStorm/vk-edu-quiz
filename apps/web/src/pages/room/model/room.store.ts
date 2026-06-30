@@ -1,10 +1,11 @@
 import type {
+  HostParticipantDto,
   HostQuestionStateDto,
   LeaderboardItemDto,
   LiveQuestionDto,
   RoomSummaryDto,
 } from "@quiz/shared";
-import { RealtimeEventType, RoomStatus, AnswerMode } from "@quiz/shared";
+import { RealtimeEventType, RoomStatus, AnswerMode, SessionRole } from "@quiz/shared";
 import { makeAutoObservable, runInAction } from "mobx";
 
 import { LANG_KEYS } from "@/app/i18n";
@@ -32,6 +33,7 @@ export class RoomStore {
   questions: RoomQuestionMeta[] = [];
   currentQuestion: LiveQuestionDto | null = null;
   leaderboard: LeaderboardItemDto[] = [];
+  hostParticipants: HostParticipantDto[] = [];
   joinedCount = 0;
   answeredCount = 0;
   activeParticipantCount = 0;
@@ -45,6 +47,7 @@ export class RoomStore {
 
   roomParticipantId: string | null = null;
   displayName = "";
+  realtimeRole: SessionRole | null = null;
   phase: ParticipantPhase = "join";
   selectedOptionIds: string[] = [];
   lastAnswerResult: AnswerResultDto | null = null;
@@ -126,8 +129,8 @@ export class RoomStore {
         }
       });
 
-      this.connectRealtime("organizer");
-      await this.syncHostState();
+      this.connectRealtime(SessionRole.Organizer);
+      await Promise.all([this.syncHostState(), this.loadHostParticipants()]);
 
       return true;
     } catch (error) {
@@ -180,7 +183,7 @@ export class RoomStore {
       });
 
       if (session) {
-        this.connectRealtime("participant", session.roomParticipantId);
+        this.connectRealtime(SessionRole.Participant, session.roomParticipantId);
 
         if (room.status === RoomStatus.Active) {
           await this.syncActiveQuestionState(session.roomParticipantId);
@@ -228,6 +231,7 @@ export class RoomStore {
     this.questions = [];
     this.currentQuestion = null;
     this.leaderboard = [];
+    this.hostParticipants = [];
     this.joinedCount = 0;
     this.answeredCount = 0;
     this.activeParticipantCount = 0;
@@ -240,6 +244,7 @@ export class RoomStore {
     this.isActionPending = false;
     this.roomParticipantId = null;
     this.displayName = "";
+    this.realtimeRole = null;
     this.phase = "join";
     this.selectedOptionIds = [];
     this.lastAnswerResult = null;
@@ -268,7 +273,7 @@ export class RoomStore {
         this.phase = "waiting";
       });
 
-      this.connectRealtime("participant", participant.id);
+      this.connectRealtime(SessionRole.Participant, participant.id);
 
       if (this.room?.status === RoomStatus.Active) {
         await this.syncActiveQuestionState(participant.id);
@@ -453,10 +458,12 @@ export class RoomStore {
     await navigator.clipboard.writeText(this.inviteUrl);
   }
 
-  private connectRealtime(role: "organizer" | "participant", roomParticipantId?: string): void {
+  private connectRealtime(role: SessionRole, roomParticipantId?: string): void {
     if (!this.roomId) {
       return;
     }
+
+    this.realtimeRole = role;
 
     roomRealtimeClient.onEvent((event) => {
       this.handleRealtimeEvent(event);
@@ -468,7 +475,7 @@ export class RoomStore {
       });
     });
 
-    if (role === "organizer") {
+    if (role === SessionRole.Organizer) {
       roomRealtimeClient.connectOrganizer(this.roomId);
     } else if (roomParticipantId) {
       roomRealtimeClient.connectParticipant(this.roomId, roomParticipantId);
@@ -505,17 +512,27 @@ export class RoomStore {
 
       case RealtimeEventType.ParticipantJoined:
         runInAction(() => {
-          this.joinedCount += 1;
+          if (this.realtimeRole === SessionRole.Organizer) {
+            this.joinedCount += 1;
+          }
         });
+
+        if (this.realtimeRole === SessionRole.Organizer) {
+          void this.loadHostParticipants();
+        }
         break;
 
       case RealtimeEventType.AnswerSubmitted:
+        if (this.realtimeRole !== SessionRole.Organizer) {
+          break;
+        }
+
         runInAction(() => {
           this.answeredCount = event.answeredCount;
           this.activeParticipantCount = event.activeParticipantCount;
           this.appendSubmissionToOptionRespondents(
             event.submission.answerOptionIds,
-            event.submission.displayName,
+            this.formatSubmissionLabel(event.submission),
           );
         });
         break;
@@ -563,6 +580,25 @@ export class RoomStore {
 
       runInAction(() => {
         this.applyHostState(state);
+      });
+    } catch (error) {
+      if (isCancelError(error)) {
+        return;
+      }
+    }
+  }
+
+  async loadHostParticipants(): Promise<void> {
+    if (!this.roomId || this.realtimeRole !== SessionRole.Organizer) {
+      return;
+    }
+
+    try {
+      const participants = await roomsApi.getHostParticipants(this.roomId);
+
+      runInAction(() => {
+        this.hostParticipants = participants;
+        this.joinedCount = participants.length;
       });
     } catch (error) {
       if (isCancelError(error)) {
@@ -621,12 +657,22 @@ export class RoomStore {
     for (const submission of submissions) {
       this.appendSubmissionToOptionRespondents(
         submission.answerOptionIds,
-        submission.displayName,
+        this.formatSubmissionLabel(submission),
         respondents,
       );
     }
 
     return respondents;
+  }
+
+  private formatSubmissionLabel(
+    submission: Pick<HostQuestionStateDto["submissions"][number], "displayName" | "email">,
+  ): string {
+    if (submission.email) {
+      return `${submission.displayName} · ${submission.email}`;
+    }
+
+    return submission.displayName;
   }
 
   private appendSubmissionToOptionRespondents(

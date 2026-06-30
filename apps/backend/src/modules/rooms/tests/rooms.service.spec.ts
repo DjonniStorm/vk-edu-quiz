@@ -202,7 +202,7 @@ describe("RoomServiceImpl", () => {
     });
     expect(authorizedParticipant).toMatchObject({
       userId: participant.id,
-      displayName: "Участник",
+      displayName: "room-join-participant user",
       status: ParticipantStatus.CONNECTED,
     });
     expect(
@@ -392,6 +392,7 @@ describe("RoomServiceImpl", () => {
             submission: {
               roomParticipantId: participant.id,
               displayName: "Участник",
+              email: null,
               answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
             },
           },
@@ -589,6 +590,7 @@ describe("RoomServiceImpl", () => {
       submissions: [
         {
           displayName: "Участник",
+          email: null,
           answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
         },
       ],
@@ -613,6 +615,46 @@ describe("RoomServiceImpl", () => {
     const hostState = await roomService.getHostState(organizer.id, room.id);
 
     expect(hostState.question?.imageUrl).toBe(imageUrl);
+  });
+
+  it("возвращает email зарегистрированного участника ведущему", async () => {
+    const organizer = await createOrganizer("room-host-email");
+    const registeredUser = await createParticipant("room-host-email-user");
+    const quiz = await createQuizService().createQuiz(organizer.id, {
+      title: "Email quiz",
+      questions: [createSingleQuestion()],
+    });
+    const roomService = createRoomService();
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+    const participant = await roomService.joinRoom(room.id, {
+      userId: registeredUser.id,
+      displayName: "ignored alias",
+    });
+
+    await roomService.startRoom(organizer.id, room.id);
+
+    await roomService.submitAnswer(room.id, {
+      roomParticipantId: participant.id,
+      questionId: quiz.questions[0]!.id,
+      answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
+      answerTimeMs: 400,
+    });
+
+    const hostState = await roomService.getHostState(organizer.id, room.id);
+    const hostParticipants = await roomService.getHostParticipants(organizer.id, room.id);
+
+    expect(participant.displayName).toBe("room-host-email-user user");
+    expect(hostState.submissions[0]).toMatchObject({
+      displayName: "room-host-email-user user",
+      email: registeredUser.email,
+    });
+    expect(hostParticipants).toEqual([
+      expect.objectContaining({
+        id: participant.id,
+        displayName: "room-host-email-user user",
+        email: registeredUser.email,
+      }),
+    ]);
   });
 
   it("не даёт showQuestion во время closing", async () => {

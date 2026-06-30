@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { usePageHead } from "@/app/seo";
 import { ROUTES } from "@/app/routes";
 import { AppLayout } from "@/widgets/app-layout";
 
@@ -67,6 +68,8 @@ export const QuizCreatePage = observer(() => {
   const pageSubtitle = isEditMode
     ? t(LANG_KEYS.pages.quizCreate.editSubtitle)
     : t(LANG_KEYS.pages.quizCreate.subtitle);
+
+  usePageHead({ title: pageTitle, description: pageSubtitle });
 
   const nextLabel =
     activeStep === QUIZ_CREATE_STEPS.basicInfo

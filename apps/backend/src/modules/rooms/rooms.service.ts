@@ -8,6 +8,7 @@ import type {
   AnswerSubmission,
   CreateRoomInput,
   CurrentQuestionState,
+  HostParticipant,
   HostQuestionState,
   JoinRoomInput,
   LeaderboardItem,
@@ -186,6 +187,30 @@ export class RoomServiceImpl implements RoomService {
     return this.buildHostState(roomId);
   }
 
+  async getHostParticipants(organizerId: EntityId, roomId: EntityId): Promise<HostParticipant[]> {
+    await this.findOrganizerRoom(organizerId, roomId);
+
+    const participants = await this.prisma.roomParticipant.findMany({
+      where: { roomId },
+      orderBy: { joinedAt: "asc" },
+      select: {
+        id: true,
+        displayName: true,
+        status: true,
+        user: {
+          select: { email: true },
+        },
+      },
+    });
+
+    return participants.map((participant) => ({
+      id: participant.id,
+      displayName: participant.displayName,
+      email: participant.user?.email ?? null,
+      status: participant.status,
+    }));
+  }
+
   async joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails> {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
@@ -208,11 +233,26 @@ export class RoomServiceImpl implements RoomService {
       throw new BadRequestError("Late join is not allowed");
     }
 
+    let displayName = input.displayName.trim();
+
+    if (input.userId) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { name: true },
+      });
+
+      if (!user) {
+        throw new NotFoundError("User not found");
+      }
+
+      displayName = user.name;
+    }
+
     const participant = await this.prisma.roomParticipant.create({
       data: {
         roomId,
         userId: input.userId ?? null,
-        displayName: input.displayName.trim(),
+        displayName,
       },
     });
 
@@ -358,7 +398,14 @@ export class RoomServiceImpl implements RoomService {
         id: input.roomParticipantId,
         roomId,
       },
-      select: { id: true, status: true, displayName: true },
+      select: {
+        id: true,
+        status: true,
+        displayName: true,
+        user: {
+          select: { email: true },
+        },
+      },
     });
 
     if (!participant) {
@@ -453,6 +500,7 @@ export class RoomServiceImpl implements RoomService {
       submission: {
         roomParticipantId: input.roomParticipantId,
         displayName: participant.displayName,
+        email: participant.user?.email ?? null,
         answerOptionIds: input.answerOptionIds,
       },
     });
@@ -801,7 +849,12 @@ export class RoomServiceImpl implements RoomService {
       },
       include: {
         roomParticipant: {
-          select: { displayName: true },
+          select: {
+            displayName: true,
+            user: {
+              select: { email: true },
+            },
+          },
         },
         participantAnswerOptions: {
           select: { answerOptionId: true },
@@ -812,6 +865,7 @@ export class RoomServiceImpl implements RoomService {
 
     return answers.map((answer) => ({
       displayName: answer.roomParticipant.displayName,
+      email: answer.roomParticipant.user?.email ?? null,
       answerOptionIds: answer.participantAnswerOptions.map((option) => option.answerOptionId),
     }));
   }

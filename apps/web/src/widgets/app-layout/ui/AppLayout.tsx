@@ -2,6 +2,7 @@ import {
   AppShell,
   Avatar,
   Box,
+  Burger,
   Button,
   Divider,
   Group,
@@ -10,35 +11,85 @@ import {
   Title,
   UnstyledButton,
 } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
 import { observer } from "mobx-react-lite";
 import { UserRole } from "@quiz/shared";
 import type { PropsWithChildren } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
 import { ROUTES } from "@/app/routes";
 import { userStore } from "@/entities/user";
 
-export type AppNavKey = "dashboard" | "myQuizzes" | "createQuiz" | "activeRooms" | "results";
+import { navigateToSection } from "../lib/scroll-to-section";
+
+export type AppNavKey = "dashboard" | "myQuizzes" | "createQuiz" | "activeRooms";
+
+type NavItem =
+  | { key: AppNavKey; label: string; kind: "section"; sectionId: string }
+  | { key: AppNavKey; label: string; kind: "route"; to: string };
 
 export interface AppLayoutProps extends PropsWithChildren {
   title: string;
   activeNav?: AppNavKey;
 }
 
+const resolveActiveNav = (pathname: string, hash: string, activeNav: AppNavKey): AppNavKey => {
+  if (pathname === ROUTES.main) {
+    if (hash === "#my-quizzes") {
+      return "myQuizzes";
+    }
+
+    if (hash === "#join-room") {
+      return "activeRooms";
+    }
+
+    return "dashboard";
+  }
+
+  return activeNav;
+};
+
 export const AppLayout = observer(({ title, children, activeNav = "dashboard" }: AppLayoutProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [mobileNavOpened, { toggle: toggleMobileNav, close: closeMobileNav }] = useDisclosure();
   const currentUser = userStore.currentUser;
   const roleLabel =
     currentUser?.role === UserRole.Admin ? t(LANG_KEYS.roles.admin) : t(LANG_KEYS.roles.user);
-  const navItems: { key: AppNavKey; label: string; marker: string; to: string }[] = [
-    { key: "dashboard", label: t(LANG_KEYS.layout.app.nav.dashboard), marker: "01", to: ROUTES.main },
-    { key: "myQuizzes", label: t(LANG_KEYS.layout.app.nav.myQuizzes), marker: "02", to: ROUTES.main },
-    { key: "createQuiz", label: t(LANG_KEYS.layout.app.nav.createQuiz), marker: "03", to: ROUTES.quizCreate },
-    { key: "activeRooms", label: t(LANG_KEYS.layout.app.nav.activeRooms), marker: "04", to: ROUTES.main },
-    { key: "results", label: t(LANG_KEYS.layout.app.nav.results), marker: "05", to: ROUTES.main },
+  const navItems: NavItem[] = [
+    {
+      key: "dashboard",
+      label: t(LANG_KEYS.layout.app.nav.dashboard),
+      kind: "section",
+      sectionId: "dashboard",
+    },
+    {
+      key: "myQuizzes",
+      label: t(LANG_KEYS.layout.app.nav.myQuizzes),
+      kind: "section",
+      sectionId: "my-quizzes",
+    },
+    {
+      key: "createQuiz",
+      label: t(LANG_KEYS.layout.app.nav.createQuiz),
+      kind: "route",
+      to: ROUTES.quizCreate,
+    },
+    {
+      key: "activeRooms",
+      label: t(LANG_KEYS.layout.app.nav.activeRooms),
+      kind: "section",
+      sectionId: "join-room",
+    },
   ];
+  const currentActiveNav = useMemo(
+    () => resolveActiveNav(location.pathname, location.hash, activeNav),
+    [location.pathname, location.hash, activeNav],
+  );
   const userInitials = currentUser?.name
     .split(" ")
     .map((part) => part[0])
@@ -46,10 +97,31 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
     .slice(0, 2)
     .toUpperCase();
 
+  const handleSectionClick = (sectionId: string) => {
+    navigateToSection(navigate, location.pathname, sectionId);
+    closeMobileNav();
+  };
+
+  const handleLogout = () => {
+    userStore.logout();
+    navigate(ROUTES.login);
+  };
+
+  const navButtonStyle = (isActive: boolean) => ({
+    borderRadius: 6,
+    background: isActive ? "#e9efff" : "transparent",
+    color: isActive ? "#1c4ed8" : "#1f2937",
+    textDecoration: "none",
+  });
+
   return (
     <AppShell
       header={{ height: 64 }}
-      navbar={{ width: 240, breakpoint: "sm" }}
+      navbar={{
+        width: 272,
+        breakpoint: "sm",
+        collapsed: { mobile: !mobileNavOpened },
+      }}
       padding="xl"
       styles={{
         main: { background: "#f8f9fc" },
@@ -59,7 +131,16 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
     >
       <AppShell.Header>
         <Group h="100%" justify="space-between" px="xl">
-          <Title order={4}>{title}</Title>
+          <Group gap="sm">
+            <Burger
+              opened={mobileNavOpened}
+              onClick={toggleMobileNav}
+              hiddenFrom="sm"
+              size="sm"
+              aria-label={t(LANG_KEYS.layout.app.brand)}
+            />
+            <Title order={4}>{title}</Title>
+          </Group>
           <Group gap="md">
             <Button variant="subtle" color="gray" px="xs">
               {t(LANG_KEYS.layout.app.bell)}
@@ -93,30 +174,37 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
 
           <Stack gap={4} px="sm" py="lg">
             {navItems.map((item) => {
-              const isActive = item.key === activeNav;
+              const isActive = item.key === currentActiveNav;
 
-              return (
-                <UnstyledButton
-                  key={item.marker}
-                  component={Link}
-                  to={item.to}
-                  px="md"
-                  py="sm"
-                  style={{
-                    borderRadius: 6,
-                    background: isActive ? "#e9efff" : "transparent",
-                    color: isActive ? "#1c4ed8" : "#1f2937",
-                    textDecoration: "none",
-                  }}
-                >
-                  <Group gap="sm">
-                    <Text size="xs" fw={700}>
-                      {item.marker}
-                    </Text>
+              if (item.kind === "route") {
+                return (
+                  <UnstyledButton
+                    key={item.key}
+                    component={Link}
+                    to={item.to}
+                    px="md"
+                    py="sm"
+                    style={navButtonStyle(isActive)}
+                    onClick={closeMobileNav}
+                  >
                     <Text size="sm" fw={isActive ? 700 : 500}>
                       {item.label}
                     </Text>
-                  </Group>
+                  </UnstyledButton>
+                );
+              }
+
+              return (
+                <UnstyledButton
+                  key={item.key}
+                  px="md"
+                  py="sm"
+                  style={navButtonStyle(isActive)}
+                  onClick={() => handleSectionClick(item.sectionId)}
+                >
+                  <Text size="sm" fw={isActive ? 700 : 500}>
+                    {item.label}
+                  </Text>
                 </UnstyledButton>
               );
             })}
@@ -124,12 +212,12 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
 
           <Box mt="auto">
             <Divider />
-            <Group p="lg" justify="space-between" wrap="nowrap">
+            <Stack gap="sm" p="lg">
               <Group gap="sm" wrap="nowrap">
                 <Avatar radius="xl" color="gray">
                   {userInitials || "U"}
                 </Avatar>
-                <Box>
+                <Box style={{ minWidth: 0 }}>
                   <Text size="sm" fw={700} lineClamp={1}>
                     {currentUser?.name ?? t(LANG_KEYS.layout.app.fallbackUser)}
                   </Text>
@@ -138,10 +226,10 @@ export const AppLayout = observer(({ title, children, activeNav = "dashboard" }:
                   </Text>
                 </Box>
               </Group>
-              <Button variant="subtle" color="gray" px="xs">
+              <Button variant="light" color="gray" fullWidth onClick={handleLogout}>
                 {t(LANG_KEYS.layout.app.exit)}
               </Button>
-            </Group>
+            </Stack>
           </Box>
         </Stack>
       </AppShell.Navbar>

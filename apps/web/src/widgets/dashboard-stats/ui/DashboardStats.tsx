@@ -25,9 +25,6 @@ export const DashboardStats = ({ stats }: DashboardStatsProps) => {
               <Text mt={8} size="xl" fw={800}>
                 {stat.value}
               </Text>
-              <Text mt={6} size="xs" c="blue.7">
-                {statKeys ? t(statKeys.trend) : stat.trend}
-              </Text>
             </Paper>
           </Grid.Col>
         );

@@ -1,5 +1,6 @@
 import type {
   CurrentQuestionStateDto,
+  HostParticipantDto,
   HostQuestionStateDto,
   LeaderboardItemDto,
   LiveQuestionDto,
@@ -95,6 +96,14 @@ class RoomsApi extends BaseApi {
 
   async getHostState(roomId: string): Promise<HostQuestionStateDto> {
     const { data } = await this.get<HostQuestionStateDto>(`/${roomId}/host-state`, {
+      meta: { level: "non-blocking" },
+    });
+
+    return data;
+  }
+
+  async getHostParticipants(roomId: string): Promise<HostParticipantDto[]> {
+    const { data } = await this.get<HostParticipantDto[]>(`/${roomId}/host/participants`, {
       meta: { level: "non-blocking" },
     });
 

@@ -12,6 +12,7 @@ export { RealtimeEventType } from "@quiz/shared";
 export interface AnswerSubmissionEvent {
   roomParticipantId: EntityId;
   displayName: string;
+  email: string | null;
   answerOptionIds: EntityId[];
 }
 

@@ -4,7 +4,6 @@ export interface DashboardStatDto {
   id: string;
   value: string;
   label?: string;
-  trend?: string;
 }
 
 export interface DashboardQuizDto {

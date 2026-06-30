@@ -212,4 +212,53 @@ describe("room routes", () => {
       score: 20,
     });
   });
+
+  it("возвращает host/participants только организатору", async () => {
+    const organizerToken = await registerUser("room-host-participants-owner");
+    const strangerToken = await registerUser("room-host-participants-stranger");
+
+    const createQuizResponse = await app.handle(
+      jsonRequest("POST", "/quizzes", { title: "Participants quiz" }, organizerToken),
+    );
+    const quiz = await createQuizResponse.json();
+
+    const createRoomResponse = await app.handle(
+      jsonRequest("POST", "/rooms", { quizId: quiz.id }, organizerToken),
+    );
+    const room = await createRoomResponse.json();
+
+    const unauthorizedResponse = await app.handle(
+      jsonRequest("GET", `/rooms/${room.id}/host/participants`),
+    );
+    expect(unauthorizedResponse.status).toBe(401);
+
+    const forbiddenResponse = await app.handle(
+      jsonRequest("GET", `/rooms/${room.id}/host/participants`, undefined, strangerToken),
+    );
+    expect(forbiddenResponse.status).toBe(404);
+
+    const joinResponse = await app.handle(
+      jsonRequest(
+        "POST",
+        `/rooms/${room.id}/join`,
+        { displayName: "Alias" },
+        organizerToken,
+      ),
+    );
+    const participant = await joinResponse.json();
+
+    const hostResponse = await app.handle(
+      jsonRequest("GET", `/rooms/${room.id}/host/participants`, undefined, organizerToken),
+    );
+    const hostParticipants = await hostResponse.json();
+
+    expect(hostResponse.status).toBe(200);
+    expect(hostParticipants).toEqual([
+      expect.objectContaining({
+        id: participant.id,
+        displayName: "Room User",
+        email: expect.stringContaining("@"),
+      }),
+    ]);
+  });
 });
