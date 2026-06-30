@@ -24,7 +24,6 @@ if [ -z "${DOMAIN:-}" ] || [ -z "${CERTBOT_EMAIL:-}" ]; then
 fi
 
 COMPOSE="docker compose -f deploy/docker-compose.prod.yml --env-file deploy/.env.prod"
-CERTBOT_WWW_VOLUME="quiz-prod_certbot_www"
 
 # Проверка DNS
 echo "==> Проверка DNS: ${DOMAIN}..."
@@ -41,22 +40,19 @@ if docker run --rm -v quiz-prod_certbot_certs:/etc/letsencrypt:ro alpine \
 fi
 
 if [ "$CERT_EXISTS" -eq 0 ]; then
-    echo "==> Создаём volume для webroot (если нет)..."
-    docker volume create "$CERTBOT_WWW_VOLUME" >/dev/null 2>&1 || true
-
     echo "==> Запускаем временный nginx на :80 для ACME challenge..."
     docker rm -f quiz-acme-bootstrap 2>/dev/null || true
     docker run --rm -d \
         --name quiz-acme-bootstrap \
         -p 80:80 \
         -v "$(pwd)/deploy/nginx/bootstrap-acme.conf:/etc/nginx/conf.d/default.conf:ro" \
-        -v "${CERTBOT_WWW_VOLUME}:/var/www/certbot" \
+        -v "quiz-prod_certbot_www:/var/www/certbot" \
         nginx:1.27-alpine
 
     sleep 2
 
     echo "==> Запрашиваем сертификат Let's Encrypt для ${DOMAIN}..."
-    if ! $COMPOSE run --rm certbot certonly \
+    if ! $COMPOSE run --rm --entrypoint certbot certbot certonly \
         --webroot -w /var/www/certbot \
         --email "$CERTBOT_EMAIL" \
         --agree-tos --no-eff-email \
