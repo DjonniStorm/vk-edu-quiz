@@ -18,6 +18,7 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { QuizImage } from "@/shared/ui/QuizImage";
 
 import { quizCreateStore } from "../../model/quiz-create.store";
 import { TIME_LIMIT_PRESETS } from "../../model/quiz-create.types";
@@ -121,6 +122,24 @@ export const QuestionEditorPanel = observer(() => {
           quizCreateStore.updateQuestion(question.clientId, { text: event.currentTarget.value })
         }
       />
+
+      <TextInput
+        label={t(LANG_KEYS.pages.quizCreate.questions.imageUrl)}
+        placeholder={t(LANG_KEYS.pages.quizCreate.questions.imageUrlPlaceholder)}
+        value={question.imageUrl}
+        onChange={(event) =>
+          quizCreateStore.updateQuestion(question.clientId, { imageUrl: event.currentTarget.value })
+        }
+      />
+
+      {question.imageUrl.trim() ? (
+        <Stack gap={4}>
+          <Text size="sm" fw={600}>
+            {t(LANG_KEYS.pages.quizCreate.questions.imagePreview)}
+          </Text>
+          <QuizImage imageUrl={question.imageUrl} alt={question.text || question.clientId} maxHeight={180} />
+        </Stack>
+      ) : null}
 
       <Select
         label={t(LANG_KEYS.pages.quizCreate.questions.answerMode)}

@@ -3,6 +3,7 @@ import type { LiveQuestionDto } from "@quiz/shared";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { QuizImage } from "@/shared/ui/QuizImage";
 
 import { AnswerOptionsGrid } from "./AnswerOptionsGrid";
 import { RoomTimer } from "./RoomTimer";
@@ -53,6 +54,7 @@ export const QuestionView = ({
 
       <Paper withBorder radius="md" p="xl">
         <Stack gap="lg">
+          <QuizImage imageUrl={question.imageUrl} alt={question.text} />
           <Title order={3}>{question.text}</Title>
           <AnswerOptionsGrid
             question={question}

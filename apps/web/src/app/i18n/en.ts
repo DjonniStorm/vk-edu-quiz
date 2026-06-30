@@ -103,6 +103,9 @@ export const en = {
         timeLimit: "Time limit",
         points: "Points",
         emptyPreview: "Empty question",
+        imageUrl: "Image URL (optional)",
+        imageUrlPlaceholder: "https://example.com/image.jpg",
+        imagePreview: "Preview",
         answerModeLabels: {
           single: "Single choice",
           multiple: "Multiple choice",
@@ -200,6 +203,7 @@ export const en = {
         next: "Next question",
         finish: "Finish early",
         answered: "{{answered}} / {{joined}} answered",
+        closingQuestion: "Revealing correct answers…",
         topLeaderboard: "Top 3",
         questionProgress: "Question {{current}} of {{total}}",
         remaining: "Remaining",

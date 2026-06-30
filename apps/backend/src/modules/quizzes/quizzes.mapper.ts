@@ -24,6 +24,7 @@ export interface QuizRecord {
 export interface QuestionRecord {
   id: string;
   text: string;
+  imageUrl: string | null;
   answerMode: AnswerMode;
   orderIndex: number;
   timeLimitSec: number;
@@ -70,6 +71,7 @@ export class QuizMapper {
     return {
       id: question.id,
       text: question.text,
+      imageUrl: question.imageUrl,
       answerMode: question.answerMode,
       orderIndex: question.orderIndex,
       timeLimitSec: question.timeLimitSec,

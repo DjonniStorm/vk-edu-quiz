@@ -103,6 +103,9 @@ export const LANG_KEYS = {
         timeLimit: "pages.quizCreate.questions.timeLimit",
         points: "pages.quizCreate.questions.points",
         emptyPreview: "pages.quizCreate.questions.emptyPreview",
+        imageUrl: "pages.quizCreate.questions.imageUrl",
+        imageUrlPlaceholder: "pages.quizCreate.questions.imageUrlPlaceholder",
+        imagePreview: "pages.quizCreate.questions.imagePreview",
         answerModeLabels: {
           single: "pages.quizCreate.questions.answerModeLabels.single",
           multiple: "pages.quizCreate.questions.answerModeLabels.multiple",

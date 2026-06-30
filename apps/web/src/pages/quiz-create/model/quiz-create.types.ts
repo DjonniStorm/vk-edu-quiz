@@ -10,6 +10,7 @@ export interface DraftAnswerOption {
 export interface DraftQuestion {
   clientId: string;
   text: string;
+  imageUrl: string;
   answerMode: AnswerMode;
   timeLimitSec: number;
   points: number;

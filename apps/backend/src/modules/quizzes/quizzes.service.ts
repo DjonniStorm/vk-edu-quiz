@@ -148,6 +148,7 @@ export class QuizServiceImpl implements QuizService {
 
     const questions: QuestionInput[] = (source.questions ?? []).map((question) => ({
       text: question.text,
+      imageUrl: question.imageUrl,
       answerMode: question.answerMode,
       orderIndex: question.orderIndex,
       timeLimitSec: question.timeLimitSec,
@@ -246,8 +247,11 @@ export class QuizServiceImpl implements QuizService {
   }
 
   private toQuestionCreateInput(question: QuestionInput) {
+    const imageUrl = question.imageUrl?.trim();
+
     return {
       text: question.text.trim(),
+      imageUrl: imageUrl ? imageUrl : null,
       answerMode: question.answerMode,
       orderIndex: question.orderIndex,
       timeLimitSec: question.timeLimitSec,

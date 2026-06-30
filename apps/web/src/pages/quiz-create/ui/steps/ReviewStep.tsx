@@ -1,8 +1,9 @@
-import { Paper, Stack, Text, Title } from "@mantine/core";
+import { Group, Paper, Stack, Text, Title } from "@mantine/core";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { QuizImage } from "@/shared/ui/QuizImage";
 
 import { quizCreateStore } from "../../model/quiz-create.store";
 
@@ -35,9 +36,18 @@ export const ReviewStep = observer(() => {
             })}
           </Text>
           {draft.questions.map((question, index) => (
-            <Text key={question.clientId} size="sm" c="dimmed">
-              Q{index + 1}: {question.text || t(LANG_KEYS.pages.quizCreate.questions.emptyPreview)}
-            </Text>
+            <Group key={question.clientId} align="flex-start" gap="sm" wrap="nowrap">
+              {question.imageUrl.trim() ? (
+                <QuizImage
+                  imageUrl={question.imageUrl}
+                  alt={question.text || question.clientId}
+                  maxHeight={64}
+                />
+              ) : null}
+              <Text size="sm" c="dimmed">
+                Q{index + 1}: {question.text || t(LANG_KEYS.pages.quizCreate.questions.emptyPreview)}
+              </Text>
+            </Group>
           ))}
         </Stack>
       </Paper>

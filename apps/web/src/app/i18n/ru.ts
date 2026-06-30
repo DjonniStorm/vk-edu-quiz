@@ -105,6 +105,9 @@ export const ru: Translation = {
         timeLimit: "Лимит времени",
         points: "Баллы",
         emptyPreview: "Пустой вопрос",
+        imageUrl: "URL изображения (необязательно)",
+        imageUrlPlaceholder: "https://example.com/image.jpg",
+        imagePreview: "Предпросмотр",
         answerModeLabels: {
           single: "Один ответ",
           multiple: "Несколько ответов",

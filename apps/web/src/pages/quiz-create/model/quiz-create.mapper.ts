@@ -2,18 +2,23 @@ import type { CreateQuizInput, QuestionInput, QuizDetailsDto } from "@/shared/ap
 
 import type { DraftQuestion, QuizDraft } from "./quiz-create.types";
 
-const mapQuestion = (question: DraftQuestion, orderIndex: number): QuestionInput => ({
-  text: question.text.trim(),
-  answerMode: question.answerMode,
-  orderIndex,
-  timeLimitSec: question.timeLimitSec,
-  points: question.points,
-  answerOptions: question.answerOptions.map((option, optionIndex) => ({
-    text: option.text.trim(),
-    isCorrect: option.isCorrect,
-    orderIndex: optionIndex,
-  })),
-});
+const mapQuestion = (question: DraftQuestion, orderIndex: number): QuestionInput => {
+  const trimmedImageUrl = question.imageUrl.trim();
+
+  return {
+    text: question.text.trim(),
+    imageUrl: trimmedImageUrl || null,
+    answerMode: question.answerMode,
+    orderIndex,
+    timeLimitSec: question.timeLimitSec,
+    points: question.points,
+    answerOptions: question.answerOptions.map((option, optionIndex) => ({
+      text: option.text.trim(),
+      isCorrect: option.isCorrect,
+      orderIndex: optionIndex,
+    })),
+  };
+};
 
 export const mapDraftToCreateInput = (draft: QuizDraft): CreateQuizInput => ({
   title: draft.title.trim(),
@@ -48,6 +53,7 @@ export const mapQuizDetailsToDraft = (dto: QuizDetailsDto): QuizDraft => ({
       (question): DraftQuestion => ({
         clientId: question.id,
         text: question.text,
+        imageUrl: question.imageUrl ?? "",
         answerMode: question.answerMode,
         timeLimitSec: question.timeLimitSec,
         points: question.points,

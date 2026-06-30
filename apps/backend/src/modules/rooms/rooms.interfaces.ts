@@ -44,6 +44,7 @@ export interface RoomParticipantDetails {
 export interface LiveQuestion {
   id: EntityId;
   text: string;
+  imageUrl: string | null;
   answerMode: AppAnswerMode;
   orderIndex: number;
   timeLimitSec: number;

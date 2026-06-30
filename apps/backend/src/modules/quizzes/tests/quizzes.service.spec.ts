@@ -23,8 +23,9 @@ const createOwner = async (prefix: string) => {
   return user;
 };
 
-const createSingleQuestion = (orderIndex = 0): QuestionInput => ({
+const createSingleQuestion = (orderIndex = 0, imageUrl?: string | null): QuestionInput => ({
   text: "Сколько будет 2 + 2?",
+  imageUrl,
   answerMode: AnswerMode.SINGLE,
   orderIndex,
   timeLimitSec: 30,
@@ -172,5 +173,38 @@ describe("QuizServiceImpl", () => {
     const result = await quizService.getOwnerQuiz(anotherOwner.id, quiz.id);
 
     expect(result).toBeNull();
+  });
+
+  it("сохраняет imageUrl при создании и замене вопросов", async () => {
+    const owner = await createOwner("quiz-image-url");
+    const quizService = createQuizService();
+    const imageUrl = "https://example.com/question.png";
+
+    const quiz = await quizService.createQuiz(owner.id, {
+      title: "Квиз с картинкой",
+      questions: [createSingleQuestion(0, imageUrl)],
+    });
+
+    expect(quiz.questions[0]?.imageUrl).toBe(imageUrl);
+
+    const updatedQuiz = await quizService.replaceQuestions(owner.id, quiz.id, [
+      createSingleQuestion(0),
+      createSingleQuestion(1, imageUrl),
+    ]);
+
+    expect(updatedQuiz.questions[0]?.imageUrl).toBeNull();
+    expect(updatedQuiz.questions[1]?.imageUrl).toBe(imageUrl);
+  });
+
+  it("нормализует пустой imageUrl в null", async () => {
+    const owner = await createOwner("quiz-empty-image-url");
+    const quizService = createQuizService();
+
+    const quiz = await quizService.createQuiz(owner.id, {
+      title: "Квиз без картинки",
+      questions: [createSingleQuestion(0, "")],
+    });
+
+    expect(quiz.questions[0]?.imageUrl).toBeNull();
   });
 });

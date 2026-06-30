@@ -29,6 +29,7 @@ export interface RoomParticipantRecord {
 export interface LiveQuestionRecord {
   id: string;
   text: string;
+  imageUrl: string | null;
   answerMode: AnswerMode;
   orderIndex: number;
   timeLimitSec: number;
@@ -82,6 +83,7 @@ export class RoomMapper {
     return {
       id: question.id,
       text: question.text,
+      imageUrl: question.imageUrl,
       answerMode: question.answerMode,
       orderIndex: question.orderIndex,
       timeLimitSec: question.timeLimitSec,

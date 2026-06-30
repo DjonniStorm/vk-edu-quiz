@@ -108,8 +108,9 @@ const createQuizForOwner = async (ownerId: string, allowLateJoin = true) =>
     allowLateJoin,
   });
 
-const createSingleQuestion = (orderIndex = 0): QuestionInput => ({
+const createSingleQuestion = (orderIndex = 0, imageUrl?: string | null): QuestionInput => ({
   text: "Сколько будет 2 + 2?",
+  imageUrl,
   answerMode: AnswerMode.SINGLE,
   orderIndex,
   timeLimitSec: 30,
@@ -593,6 +594,25 @@ describe("RoomServiceImpl", () => {
       ],
     });
     expect(hostState.correctOptionIds).toBeUndefined();
+  });
+
+  it("пробрасывает imageUrl в live question и host-state", async () => {
+    const organizer = await createOrganizer("room-image-url");
+    const imageUrl = "https://example.com/live-question.png";
+    const quiz = await createQuizService().createQuiz(organizer.id, {
+      title: "Image quiz",
+      questions: [createSingleQuestion(0, imageUrl)],
+    });
+    const roomService = createRoomService();
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+
+    const liveQuestion = await roomService.startRoom(organizer.id, room.id);
+
+    expect(liveQuestion?.imageUrl).toBe(imageUrl);
+
+    const hostState = await roomService.getHostState(organizer.id, room.id);
+
+    expect(hostState.question?.imageUrl).toBe(imageUrl);
   });
 
   it("не даёт showQuestion во время closing", async () => {

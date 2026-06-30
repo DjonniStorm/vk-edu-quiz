@@ -26,6 +26,7 @@ const createEmptyOption = (orderIndex: number): DraftAnswerOption => ({
 const createEmptyQuestion = (): DraftQuestion => ({
   clientId: crypto.randomUUID(),
   text: "",
+  imageUrl: "",
   answerMode: AnswerMode.Single,
   timeLimitSec: 30,
   points: 10,
@@ -171,6 +172,7 @@ export class QuizCreateStore {
     return this.draft.questions.some(
       (question) =>
         question.text.trim() ||
+        question.imageUrl.trim() ||
         question.answerOptions.some((option) => option.text.trim() || option.isCorrect),
     );
   }
@@ -265,6 +267,7 @@ export class QuizCreateStore {
     for (const [index, question] of this.draft.questions.entries()) {
       const result = questionInputSchema.safeParse({
         text: question.text.trim(),
+        imageUrl: question.imageUrl.trim() || undefined,
         answerMode: question.answerMode,
         orderIndex: index,
         timeLimitSec: question.timeLimitSec,

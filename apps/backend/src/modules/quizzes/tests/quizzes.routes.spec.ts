@@ -154,4 +154,101 @@ describe("quiz routes", () => {
     expect(response.status).toBe(400);
     expect(body.error.code).toBe("VALIDATION_ERROR");
   });
+
+  it("сохраняет imageUrl вопроса и отклоняет некорректный URL", async () => {
+    const { token } = await registerUser("quiz-routes-image-url");
+
+    const createResponse = await app.handle(
+      jsonRequest(
+        "POST",
+        "/quizzes",
+        {
+          title: "Квиз с картинкой",
+          questions: [
+            {
+              text: "Где находится Колизей?",
+              imageUrl: "https://example.com/colosseum.jpg",
+              answerMode: "SINGLE",
+              orderIndex: 0,
+              timeLimitSec: 30,
+              points: 10,
+              answerOptions: [
+                { text: "Рим", isCorrect: true, orderIndex: 0 },
+                { text: "Париж", isCorrect: false, orderIndex: 1 },
+              ],
+            },
+          ],
+        },
+        token,
+      ),
+    );
+    const createdQuiz = await createResponse.json();
+
+    expect(createResponse.status).toBe(200);
+    expect(createdQuiz.questions[0]?.imageUrl).toBe("https://example.com/colosseum.jpg");
+
+    const invalidResponse = await app.handle(
+      jsonRequest(
+        "POST",
+        "/quizzes",
+        {
+          title: "Невалидный URL",
+          questions: [
+            {
+              text: "Вопрос",
+              imageUrl: "not-a-url",
+              answerMode: "SINGLE",
+              orderIndex: 0,
+              timeLimitSec: 30,
+              points: 10,
+              answerOptions: [
+                { text: "A", isCorrect: true, orderIndex: 0 },
+                { text: "B", isCorrect: false, orderIndex: 1 },
+              ],
+            },
+          ],
+        },
+        token,
+      ),
+    );
+    const invalidBody = await invalidResponse.json();
+
+    expect(invalidResponse.status).toBe(400);
+    expect(invalidBody.error.code).toBe("VALIDATION_ERROR");
+
+    for (const imageUrl of [
+      "javascript:alert(1)",
+      "ftp://example.com/image.png",
+      "data:image/svg+xml,<svg></svg>",
+    ]) {
+      const rejectedResponse = await app.handle(
+        jsonRequest(
+          "POST",
+          "/quizzes",
+          {
+            title: "Недопустимая схема URL",
+            questions: [
+              {
+                text: "Вопрос",
+                imageUrl,
+                answerMode: "SINGLE",
+                orderIndex: 0,
+                timeLimitSec: 30,
+                points: 10,
+                answerOptions: [
+                  { text: "A", isCorrect: true, orderIndex: 0 },
+                  { text: "B", isCorrect: false, orderIndex: 1 },
+                ],
+              },
+            ],
+          },
+          token,
+        ),
+      );
+      const rejectedBody = await rejectedResponse.json();
+
+      expect(rejectedResponse.status).toBe(400);
+      expect(rejectedBody.error.code).toBe("VALIDATION_ERROR");
+    }
+  });
 });

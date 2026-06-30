@@ -14,6 +14,7 @@ export interface AnswerOptionInput {
 
 export interface QuestionInput {
   text: string;
+  imageUrl?: string | null;
   answerMode: AppAnswerMode;
   orderIndex: number;
   timeLimitSec: number;
@@ -59,6 +60,7 @@ export interface QuizDetails extends QuizListItem {
 export interface QuestionDetails {
   id: EntityId;
   text: string;
+  imageUrl: string | null;
   answerMode: AppAnswerMode;
   orderIndex: number;
   timeLimitSec: number;

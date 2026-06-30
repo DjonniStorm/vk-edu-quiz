@@ -76,6 +76,7 @@ model Question {
   id           String     @id @default(uuid()) @db.Uuid
   quizId       String     @db.Uuid
   text         String
+  imageUrl     String?
   answerMode   AnswerMode
   orderIndex   Int
   timeLimitSec Int

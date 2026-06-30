@@ -17,6 +17,7 @@ export interface AnswerOptionDetailsDto {
 export interface QuestionDetailsDto {
   id: string;
   text: string;
+  imageUrl: string | null;
   answerMode: AnswerMode;
   orderIndex: number;
   timeLimitSec: number;

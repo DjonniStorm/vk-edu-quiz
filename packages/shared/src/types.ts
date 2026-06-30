@@ -46,6 +46,7 @@ export interface LiveAnswerOptionDto {
 export interface LiveQuestionDto {
   id: EntityId;
   text: string;
+  imageUrl: string | null;
   answerMode: AnswerMode;
   orderIndex: number;
   timeLimitSec: number;

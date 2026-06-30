@@ -26,8 +26,28 @@ export const answerOptionInputSchema = z.object({
   orderIndex: z.number().int().min(0),
 });
 
+export const isHttpOrHttpsUrl = (value: string): boolean => {
+  try {
+    const protocol = new URL(value).protocol;
+
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+export const optionalImageUrlSchema = z
+  .union([
+    z.string().refine(isHttpOrHttpsUrl, { message: "Image URL must use http or https" }),
+    z.literal(""),
+    z.null(),
+  ])
+  .optional()
+  .transform((value) => (value === "" || value === undefined ? null : value));
+
 export const questionInputSchema = z.object({
   text: z.string().min(1),
+  imageUrl: optionalImageUrlSchema,
   answerMode: z.enum([AnswerMode.Single, AnswerMode.Multiple]),
   orderIndex: z.number().int().min(0),
   timeLimitSec: z.number().int().positive(),
