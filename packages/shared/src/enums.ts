@@ -37,6 +37,7 @@ export enum RealtimeEventType {
   QuestionShown = "question.shown",
   ParticipantJoined = "participant.joined",
   AnswerSubmitted = "answer.submitted",
+  QuestionRevealed = "question.revealed",
   LeaderboardUpdated = "leaderboard.updated",
   RoomFinished = "room.finished",
 }

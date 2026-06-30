@@ -13,6 +13,8 @@ export interface QuestionViewProps {
   total: number;
   selectedOptionIds: string[];
   readonly?: boolean;
+  respondentsByOption?: Map<string, string[]>;
+  correctOptionIds?: string[] | null;
   showSubmit?: boolean;
   isSubmitting?: boolean;
   submitted?: boolean;
@@ -27,6 +29,8 @@ export const QuestionView = ({
   total,
   selectedOptionIds,
   readonly = false,
+  respondentsByOption,
+  correctOptionIds = null,
   showSubmit = false,
   isSubmitting = false,
   submitted = false,
@@ -54,6 +58,8 @@ export const QuestionView = ({
             question={question}
             selectedOptionIds={selectedOptionIds}
             readonly={readonly || submitted}
+            respondentsByOption={respondentsByOption}
+            correctOptionIds={correctOptionIds}
             onToggle={onToggle}
           />
         </Stack>

@@ -200,6 +200,7 @@ export const LANG_KEYS = {
         next: "pages.room.host.next",
         finish: "pages.room.host.finish",
         answered: "pages.room.host.answered",
+        closingQuestion: "pages.room.host.closingQuestion",
         topLeaderboard: "pages.room.host.topLeaderboard",
         questionProgress: "pages.room.host.questionProgress",
         remaining: "pages.room.host.remaining",

@@ -1,4 +1,5 @@
 import type {
+  HostQuestionStateDto,
   LeaderboardItemDto,
   LiveQuestionDto,
   RoomSummaryDto,
@@ -33,6 +34,10 @@ export class RoomStore {
   leaderboard: LeaderboardItemDto[] = [];
   joinedCount = 0;
   answeredCount = 0;
+  activeParticipantCount = 0;
+  optionRespondents = new Map<string, string[]>();
+  revealedCorrectOptionIds: string[] | null = null;
+  isQuestionClosing = false;
   wsConnected = false;
   isLoading = false;
   loadError: string | null = null;
@@ -122,7 +127,7 @@ export class RoomStore {
       });
 
       this.connectRealtime("organizer");
-      await this.syncActiveQuestionState();
+      await this.syncHostState();
 
       return true;
     } catch (error) {
@@ -225,6 +230,10 @@ export class RoomStore {
     this.leaderboard = [];
     this.joinedCount = 0;
     this.answeredCount = 0;
+    this.activeParticipantCount = 0;
+    this.optionRespondents = new Map();
+    this.revealedCorrectOptionIds = null;
+    this.isQuestionClosing = false;
     this.wsConnected = false;
     this.isLoading = false;
     this.loadError = null;
@@ -359,6 +368,7 @@ export class RoomStore {
           this.room = { ...this.room, status: RoomStatus.Active };
         }
 
+        this.resetQuestionLiveState();
         this.applyQuestion(question);
       });
     } catch (error) {
@@ -377,28 +387,14 @@ export class RoomStore {
   }
 
   async nextQuestion(): Promise<void> {
-    if (!this.roomId || !this.currentQuestion || this.isActionPending) {
-      return;
-    }
-
-    const currentIndex = this.questions.findIndex((question) => question.id === this.currentQuestion?.id);
-    const nextQuestion = currentIndex >= 0 ? this.questions[currentIndex + 1] : undefined;
-
-    if (!nextQuestion) {
-      await this.finish();
+    if (!this.roomId || !this.currentQuestion || this.isActionPending || this.isQuestionClosing) {
       return;
     }
 
     this.isActionPending = true;
 
     try {
-      const question = await roomsApi.showQuestion(this.roomId, {
-        questionId: nextQuestion.id,
-      });
-
-      runInAction(() => {
-        this.applyQuestion(question);
-      });
+      await roomsApi.advance(this.roomId);
     } catch (error) {
       if (isCancelError(error)) {
         return;
@@ -487,6 +483,7 @@ export class RoomStore {
             this.room = { ...this.room, status: RoomStatus.Active };
           }
 
+          this.resetQuestionLiveState();
           this.applyQuestion(event.question);
 
           if (this.roomParticipantId && this.phase !== "finished") {
@@ -497,6 +494,7 @@ export class RoomStore {
 
       case RealtimeEventType.QuestionShown:
         runInAction(() => {
+          this.resetQuestionLiveState();
           this.applyQuestion(event.question);
 
           if (this.roomParticipantId && this.phase !== "finished") {
@@ -514,6 +512,18 @@ export class RoomStore {
       case RealtimeEventType.AnswerSubmitted:
         runInAction(() => {
           this.answeredCount = event.answeredCount;
+          this.activeParticipantCount = event.activeParticipantCount;
+          this.appendSubmissionToOptionRespondents(
+            event.submission.answerOptionIds,
+            event.submission.displayName,
+          );
+        });
+        break;
+
+      case RealtimeEventType.QuestionRevealed:
+        runInAction(() => {
+          this.isQuestionClosing = true;
+          this.revealedCorrectOptionIds = event.correctOptionIds;
         });
         break;
 
@@ -540,6 +550,24 @@ export class RoomStore {
 
       default:
         break;
+    }
+  }
+
+  private async syncHostState(): Promise<void> {
+    if (!this.roomId || this.room?.status !== RoomStatus.Active) {
+      return;
+    }
+
+    try {
+      const state = await roomsApi.getHostState(this.roomId);
+
+      runInAction(() => {
+        this.applyHostState(state);
+      });
+    } catch (error) {
+      if (isCancelError(error)) {
+        return;
+      }
     }
   }
 
@@ -571,6 +599,57 @@ export class RoomStore {
     }
   }
 
+  private applyHostState(state: HostQuestionStateDto): void {
+    this.currentQuestion = state.question;
+    this.answeredCount = state.answeredCount;
+    this.activeParticipantCount = state.activeParticipantCount;
+    this.isQuestionClosing = state.phase === "revealing";
+    this.revealedCorrectOptionIds =
+      state.phase === "revealing" ? (state.correctOptionIds ?? null) : null;
+    this.optionRespondents = this.buildOptionRespondentsFromSubmissions(state.submissions);
+
+    if (this.room && state.question) {
+      this.room = { ...this.room, currentQuestionId: state.question.id };
+    }
+  }
+
+  private buildOptionRespondentsFromSubmissions(
+    submissions: HostQuestionStateDto["submissions"],
+  ): Map<string, string[]> {
+    const respondents = new Map<string, string[]>();
+
+    for (const submission of submissions) {
+      this.appendSubmissionToOptionRespondents(
+        submission.answerOptionIds,
+        submission.displayName,
+        respondents,
+      );
+    }
+
+    return respondents;
+  }
+
+  private appendSubmissionToOptionRespondents(
+    answerOptionIds: string[],
+    displayName: string,
+    target: Map<string, string[]> = this.optionRespondents,
+  ): void {
+    for (const optionId of answerOptionIds) {
+      const names = target.get(optionId) ?? [];
+
+      if (!names.includes(displayName)) {
+        target.set(optionId, [...names, displayName]);
+      }
+    }
+  }
+
+  private resetQuestionLiveState(): void {
+    this.answeredCount = 0;
+    this.optionRespondents = new Map();
+    this.revealedCorrectOptionIds = null;
+    this.isQuestionClosing = false;
+  }
+
   private restoreCurrentQuestionState(
     question: LiveQuestionDto | null,
     answeredCount: number,
@@ -595,7 +674,6 @@ export class RoomStore {
 
   private applyQuestion(question: LiveQuestionDto | null): void {
     this.currentQuestion = question;
-    this.answeredCount = 0;
     this.selectedOptionIds = [];
     this.lastAnswerResult = null;
 

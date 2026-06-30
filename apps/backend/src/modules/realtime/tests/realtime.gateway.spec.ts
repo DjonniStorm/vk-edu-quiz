@@ -21,6 +21,12 @@ const createAnswerSubmittedEvent = (roomId: string, answeredCount: number): Real
   type: RealtimeEventType.AnswerSubmitted,
   roomId,
   answeredCount,
+  activeParticipantCount: 1,
+  submission: {
+    roomParticipantId: crypto.randomUUID(),
+    displayName: "Test",
+    answerOptionIds: [crypto.randomUUID()],
+  },
 });
 
 const createRoomFinishedEvent = (roomId: string): RealtimeEvent => ({
@@ -85,19 +91,17 @@ describe("InMemoryRealtimeGateway", () => {
     expect(client.events).toHaveLength(0);
   });
 
-  it("переносит существующий connection id в новую комнату при повторной регистрации", () => {
+  it("возвращает активных участников по WS-соединениям", () => {
     const gateway = new InMemoryRealtimeGateway();
-    const firstRoomId = crypto.randomUUID();
-    const secondRoomId = crypto.randomUUID();
+    const roomId = crypto.randomUUID();
+    const participantId = crypto.randomUUID();
     const client = new CapturingRealtimeClient();
 
-    gateway.registerConnection({ id: "same-id", roomId: firstRoomId, isOrganizer: false }, client);
-    gateway.registerConnection({ id: "same-id", roomId: secondRoomId, isOrganizer: false }, client);
+    gateway.registerConnection(
+      { id: "participant", roomId, roomParticipantId: participantId, isOrganizer: false },
+      client,
+    );
 
-    gateway.publishToRoom(firstRoomId, createAnswerSubmittedEvent(firstRoomId, 1));
-    gateway.publishToRoom(secondRoomId, createAnswerSubmittedEvent(secondRoomId, 1));
-
-    expect(client.events).toHaveLength(1);
-    expect(client.events[0]?.roomId).toBe(secondRoomId);
+    expect(gateway.getActiveParticipantIds(roomId)).toEqual([participantId]);
   });
 });

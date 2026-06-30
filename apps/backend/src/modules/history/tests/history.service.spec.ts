@@ -13,11 +13,17 @@ import { RoomServiceImpl } from "../../rooms/rooms.service";
 import { HistoryServiceImpl } from "../history.service";
 
 const createdEmails: string[] = [];
+const createdRoomServices: RoomServiceImpl[] = [];
 
 const createHistoryService = () => new HistoryServiceImpl(getTestPrismaClient());
 const createQuizService = () => new QuizServiceImpl(getTestPrismaClient());
-const createRoomService = () =>
-  new RoomServiceImpl(getTestPrismaClient(), new InMemoryRealtimeGateway());
+const createRoomService = () => {
+  const service = new RoomServiceImpl(getTestPrismaClient(), new InMemoryRealtimeGateway());
+
+  createdRoomServices.push(service);
+
+  return service;
+};
 
 const createOrganizer = async (prefix: string) => {
   const user = await createTestUser(prefix);
@@ -83,6 +89,11 @@ const createFinishedRoom = async () => {
 };
 
 afterEach(async () => {
+  for (const service of createdRoomServices) {
+    service.dispose();
+  }
+
+  createdRoomServices.length = 0;
   await deleteTestUsersByEmail(createdEmails);
   createdEmails.length = 0;
 });

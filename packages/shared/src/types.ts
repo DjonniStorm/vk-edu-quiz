@@ -78,6 +78,22 @@ export interface CurrentQuestionStateDto {
   participantHasAnswered: boolean;
 }
 
+export interface AnswerSubmissionDto {
+  displayName: string;
+  answerOptionIds: EntityId[];
+}
+
+export type HostQuestionPhase = "live" | "revealing";
+
+export interface HostQuestionStateDto {
+  question: LiveQuestionDto | null;
+  answeredCount: number;
+  activeParticipantCount: number;
+  submissions: AnswerSubmissionDto[];
+  phase: HostQuestionPhase;
+  correctOptionIds?: EntityId[];
+}
+
 export interface RoomParticipantDto {
   id: EntityId;
   userId: EntityId | null;

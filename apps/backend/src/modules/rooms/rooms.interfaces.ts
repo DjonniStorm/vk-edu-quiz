@@ -79,6 +79,22 @@ export interface CurrentQuestionState {
   participantHasAnswered: boolean;
 }
 
+export interface AnswerSubmission {
+  displayName: string;
+  answerOptionIds: EntityId[];
+}
+
+export type HostQuestionPhase = "live" | "revealing";
+
+export interface HostQuestionState {
+  question: LiveQuestion | null;
+  answeredCount: number;
+  activeParticipantCount: number;
+  submissions: AnswerSubmission[];
+  phase: HostQuestionPhase;
+  correctOptionIds?: EntityId[];
+}
+
 export interface RoomService {
   createRoom(organizerId: EntityId, input: CreateRoomInput): Promise<RoomSummary>;
   getRoom(roomId: EntityId): Promise<RoomSummary | null>;
@@ -86,10 +102,12 @@ export interface RoomService {
     roomId: EntityId,
     roomParticipantId?: EntityId,
   ): Promise<CurrentQuestionState>;
+  getHostState(organizerId: EntityId, roomId: EntityId): Promise<HostQuestionState>;
   joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails>;
   leaveRoom(roomParticipantId: EntityId): Promise<void>;
   startRoom(organizerId: EntityId, roomId: EntityId): Promise<LiveQuestion | null>;
   showQuestion(organizerId: EntityId, roomId: EntityId, questionId: EntityId): Promise<LiveQuestion>;
+  advanceQuestion(organizerId: EntityId, roomId: EntityId): Promise<{ ok: true }>;
   submitAnswer(roomId: EntityId, input: SubmitAnswerInput): Promise<AnswerResult>;
   getLeaderboard(roomId: EntityId): Promise<LeaderboardItem[]>;
   finishRoom(organizerId: EntityId, roomId: EntityId): Promise<LeaderboardItem[]>;

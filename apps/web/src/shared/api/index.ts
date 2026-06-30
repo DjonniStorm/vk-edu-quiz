@@ -23,6 +23,7 @@ export type {
 } from "./clients/rooms.api";
 export type {
   CurrentQuestionStateDto,
+  HostQuestionStateDto,
   OrganizerHistorySummaryDto,
   OrganizerRoomHistoryItemDto,
   RoomResultsDto,

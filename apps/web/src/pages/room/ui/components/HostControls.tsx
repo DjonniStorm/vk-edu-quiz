@@ -10,9 +10,10 @@ export interface HostControlsProps {
   isFinished: boolean;
   hasQuestion: boolean;
   answeredCount: number;
-  joinedCount: number;
+  activeParticipantCount: number;
   inviteUrl: string;
   isActionPending: boolean;
+  isQuestionClosing: boolean;
   onStart: () => void;
   onNext: () => void;
   onFinish: () => void;
@@ -25,9 +26,10 @@ export const HostControls = ({
   isFinished,
   hasQuestion,
   answeredCount,
-  joinedCount,
+  activeParticipantCount,
   inviteUrl,
   isActionPending,
+  isQuestionClosing,
   onStart,
   onNext,
   onFinish,
@@ -67,13 +69,18 @@ export const HostControls = ({
             <Text fw={600}>
               {t(LANG_KEYS.pages.room.host.answered, {
                 answered: answeredCount,
-                joined: joinedCount,
+                active: activeParticipantCount,
               })}
             </Text>
+            {isQuestionClosing ? (
+              <Text size="sm" c="dimmed">
+                {t(LANG_KEYS.pages.room.host.closingQuestion)}
+              </Text>
+            ) : null}
             <Group grow>
               <Button
                 loading={isActionPending}
-                disabled={!hasQuestion}
+                disabled={!hasQuestion || isQuestionClosing}
                 onClick={onNext}
               >
                 {t(LANG_KEYS.pages.room.host.next)}
@@ -83,6 +90,7 @@ export const HostControls = ({
               variant="subtle"
               color="red"
               loading={isActionPending}
+              disabled={isQuestionClosing}
               onClick={onFinish}
             >
               {t(LANG_KEYS.pages.room.host.finish)}

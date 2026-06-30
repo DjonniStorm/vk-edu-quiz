@@ -57,6 +57,24 @@ export class InMemoryRealtimeGateway implements RealtimeGateway {
     }
   }
 
+  getActiveParticipantIds(roomId: EntityId): EntityId[] {
+    const participantIds = new Set<EntityId>();
+
+    for (const registeredConnection of this.connectionsById.values()) {
+      const { connection } = registeredConnection;
+
+      if (
+        connection.roomId === roomId &&
+        !connection.isOrganizer &&
+        connection.roomParticipantId
+      ) {
+        participantIds.add(connection.roomParticipantId);
+      }
+    }
+
+    return [...participantIds];
+  }
+
   publishToRoom(roomId: EntityId, event: RealtimeEvent): void {
     this.publishToConnections(this.connectionIdsByRoomId.get(roomId), event);
   }

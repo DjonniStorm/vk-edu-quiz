@@ -100,6 +100,28 @@ export const createRoomRoutes = ({ roomService, authContextProvider }: RoomRoute
         security: [{ BearerAuth: [] }],
       },
     })
+    .post("/:roomId/questions/advance", async ({ headers, params }) => {
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
+
+      return roomService.advanceQuestion(currentUser.id, params.roomId);
+    }, {
+      detail: {
+        tags: ["Rooms"],
+        summary: "Advance to next question",
+        security: [{ BearerAuth: [] }],
+      },
+    })
+    .get("/:roomId/host-state", async ({ headers, params }) => {
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
+
+      return roomService.getHostState(currentUser.id, params.roomId);
+    }, {
+      detail: {
+        tags: ["Rooms"],
+        summary: "Get host question state",
+        security: [{ BearerAuth: [] }],
+      },
+    })
     .post("/:roomId/answers", ({ params, body }) =>
       roomService.submitAnswer(params.roomId, submitAnswerSchema.parse(body)),
       {

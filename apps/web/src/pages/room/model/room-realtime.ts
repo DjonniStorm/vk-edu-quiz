@@ -5,6 +5,7 @@ import type {
 } from "@quiz/shared";
 import { RealtimeEventType } from "@quiz/shared";
 
+import { authTokenStorage } from "@/shared/api/http-client";
 import { env } from "@/shared/config/env";
 
 export type RoomRealtimeEvent =
@@ -15,7 +16,23 @@ export type RoomRealtimeEvent =
       roomId: string;
       participant: RoomParticipantDto;
     }
-  | { type: RealtimeEventType.AnswerSubmitted; roomId: string; answeredCount: number }
+  | {
+      type: RealtimeEventType.AnswerSubmitted;
+      roomId: string;
+      answeredCount: number;
+      activeParticipantCount: number;
+      submission: {
+        roomParticipantId: string;
+        displayName: string;
+        answerOptionIds: string[];
+      };
+    }
+  | {
+      type: RealtimeEventType.QuestionRevealed;
+      roomId: string;
+      questionId: string;
+      correctOptionIds: string[];
+    }
   | {
       type: RealtimeEventType.LeaderboardUpdated;
       roomId: string;
@@ -94,6 +111,14 @@ export class RoomRealtimeClient {
 
     if (role === "participant" && this.roomParticipantId) {
       params.set("roomParticipantId", this.roomParticipantId);
+    }
+
+    if (role === "organizer") {
+      const accessToken = authTokenStorage.getAccessToken();
+
+      if (accessToken) {
+        params.set("token", accessToken);
+      }
     }
 
     const url = `${env.wsBaseUrl}/realtime/rooms/${roomId}?${params.toString()}`;

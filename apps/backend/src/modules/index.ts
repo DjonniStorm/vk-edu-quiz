@@ -13,7 +13,10 @@ export interface AppModulesDeps {
 
 export const createModules = ({ env, prisma }: AppModulesDeps) => {
   const auth = createAuthModule({ env, prisma });
-  const realtime = createRealtimeModule();
+  const realtime = createRealtimeModule({
+    prisma,
+    authContextProvider: auth.authContextProvider,
+  });
   const quizzes = createQuizModule({
     prisma,
     authContextProvider: auth.authContextProvider,

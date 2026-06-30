@@ -1,4 +1,4 @@
-import { afterAll, afterEach, describe, expect, it } from "vitest";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 
 import { BadRequestError, ConflictError, NotFoundError } from "../../../core/errors";
 import {
@@ -23,10 +23,19 @@ const createdEmails: string[] = [];
 
 class CapturingRealtimeGateway implements RealtimeGateway {
   public readonly events: { target: "room" | "organizer" | "participant"; id: string; event: RealtimeEvent }[] = [];
+  public activeParticipantIds = new Set<string>();
 
   registerConnection(_connection: RealtimeConnection, _client: RealtimeClient): void {}
 
   unregisterConnection(_connectionId: string): void {}
+
+  getActiveParticipantIds(_roomId: string): string[] {
+    return [...this.activeParticipantIds];
+  }
+
+  setActiveParticipantIds(participantIds: string[]): void {
+    this.activeParticipantIds = new Set(participantIds);
+  }
 
   publishToRoom(roomId: string, event: RealtimeEvent): void {
     this.events.push({ target: "room", id: roomId, event });
@@ -42,11 +51,38 @@ class CapturingRealtimeGateway implements RealtimeGateway {
 }
 
 let realtimeGateway: CapturingRealtimeGateway;
+const createdRoomServices: RoomServiceImpl[] = [];
 
-const createRoomService = () => {
+const disposeCreatedRoomServices = (): void => {
+  for (const service of createdRoomServices) {
+    service.dispose();
+  }
+
+  createdRoomServices.length = 0;
+};
+
+const expectRejectedWith = async (
+  action: Promise<unknown>,
+  ErrorClass: new (...args: never[]) => Error,
+): Promise<void> => {
+  let caughtError: unknown;
+
+  try {
+    await action;
+  } catch (error) {
+    caughtError = error;
+  }
+
+  expect(caughtError).toBeInstanceOf(ErrorClass);
+};
+
+const createRoomService = (options?: { questionRevealDelayMs?: number }) => {
   realtimeGateway = new CapturingRealtimeGateway();
+  const service = new RoomServiceImpl(getTestPrismaClient(), realtimeGateway, options);
 
-  return new RoomServiceImpl(getTestPrismaClient(), realtimeGateway);
+  createdRoomServices.push(service);
+
+  return service;
 };
 const createQuizService = () => new QuizServiceImpl(getTestPrismaClient());
 
@@ -104,6 +140,8 @@ const createLiveQuizForOwner = async (ownerId: string) =>
   });
 
 afterEach(async () => {
+  disposeCreatedRoomServices();
+  vi.useRealTimers();
   await deleteTestUsersByEmail(createdEmails);
   createdEmails.length = 0;
 });
@@ -135,9 +173,10 @@ describe("RoomServiceImpl", () => {
     const quiz = await createQuizForOwner(organizer.id);
     const roomService = createRoomService();
 
-    await expect(
+    await expectRejectedWith(
       roomService.createRoom(anotherOrganizer.id, { quizId: quiz.id }),
-    ).rejects.toBeInstanceOf(NotFoundError);
+      NotFoundError,
+    );
   });
 
   it("подключает гостя и авторизованного участника", async () => {
@@ -231,9 +270,10 @@ describe("RoomServiceImpl", () => {
       data: { status: RoomStatus.ACTIVE },
     });
 
-    await expect(
+    await expectRejectedWith(
       roomService.joinRoom(room.id, { displayName: "Поздний участник" }),
-    ).rejects.toBeInstanceOf(BadRequestError);
+      BadRequestError,
+    );
   });
 
   it("стартует комнату и выбирает первый вопрос по orderIndex", async () => {
@@ -274,9 +314,7 @@ describe("RoomServiceImpl", () => {
     const roomService = createRoomService();
     const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
 
-    await expect(roomService.startRoom(anotherOrganizer.id, room.id)).rejects.toBeInstanceOf(
-      NotFoundError,
-    );
+    await expectRejectedWith(roomService.startRoom(anotherOrganizer.id, room.id), NotFoundError);
   });
 
   it("не принимает ответ до старта комнаты", async () => {
@@ -286,14 +324,15 @@ describe("RoomServiceImpl", () => {
     const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
     const participant = await roomService.joinRoom(room.id, { displayName: "Участник" });
 
-    await expect(
+    await expectRejectedWith(
       roomService.submitAnswer(room.id, {
         roomParticipantId: participant.id,
         questionId: quiz.questions[0]!.id,
         answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
         answerTimeMs: 1000,
       }),
-    ).rejects.toBeInstanceOf(BadRequestError);
+      BadRequestError,
+    );
   });
 
   it("не принимает ответ на не текущий вопрос", async () => {
@@ -305,14 +344,15 @@ describe("RoomServiceImpl", () => {
 
     await roomService.startRoom(organizer.id, room.id);
 
-    await expect(
+    await expectRejectedWith(
       roomService.submitAnswer(room.id, {
         roomParticipantId: participant.id,
         questionId: quiz.questions[1]!.id,
         answerOptionIds: [quiz.questions[1]!.answerOptions[0]!.id],
         answerTimeMs: 1000,
       }),
-    ).rejects.toBeInstanceOf(BadRequestError);
+      BadRequestError,
+    );
   });
 
   it("начисляет баллы за правильный single choice ответ и запрещает повторный ответ", async () => {
@@ -347,6 +387,12 @@ describe("RoomServiceImpl", () => {
             type: RealtimeEventType.AnswerSubmitted,
             roomId: room.id,
             answeredCount: 1,
+            activeParticipantCount: 0,
+            submission: {
+              roomParticipantId: participant.id,
+              displayName: "Участник",
+              answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
+            },
           },
         },
         {
@@ -376,14 +422,15 @@ describe("RoomServiceImpl", () => {
       totalAnswerTimeMs: 1500,
     });
 
-    await expect(
+    await expectRejectedWith(
       roomService.submitAnswer(room.id, {
         roomParticipantId: participant.id,
         questionId: quiz.questions[0]!.id,
         answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
         answerTimeMs: 1200,
       }),
-    ).rejects.toBeInstanceOf(ConflictError);
+      ConflictError,
+    );
   });
 
   it("не начисляет баллы за частичный multiple choice ответ", async () => {
@@ -465,5 +512,114 @@ describe("RoomServiceImpl", () => {
     expect(dbRoom?.currentQuestionId).toBeNull();
     expect(dbRoom?.finishedAt).toBeInstanceOf(Date);
     expect(dbParticipant?.status).toBe(ParticipantStatus.FINISHED);
+  });
+
+  it("автоматически переходит к следующему вопросу, когда все active участники ответили", async () => {
+    vi.useFakeTimers();
+
+    const organizer = await createOrganizer("room-auto-advance");
+    const quiz = await createLiveQuizForOwner(organizer.id);
+    const roomService = createRoomService({ questionRevealDelayMs: 10 });
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+    const participant = await roomService.joinRoom(room.id, { displayName: "Участник" });
+
+    await roomService.startRoom(organizer.id, room.id);
+    realtimeGateway.setActiveParticipantIds([participant.id]);
+
+    const firstQuestion = quiz.questions.find((question) => question.orderIndex === 0)!;
+
+    await roomService.submitAnswer(room.id, {
+      roomParticipantId: participant.id,
+      questionId: firstQuestion.id,
+      answerOptionIds: [firstQuestion.answerOptions[0]!.id],
+      answerTimeMs: 1000,
+    });
+
+    expect(
+      realtimeGateway.events.some((entry) => entry.event.type === RealtimeEventType.QuestionRevealed),
+    ).toBe(true);
+
+    vi.advanceTimersByTime(10);
+
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      await Promise.resolve();
+
+      const dbRoom = await getTestPrismaClient().room.findUnique({ where: { id: room.id } });
+
+      if (dbRoom?.currentQuestionId !== firstQuestion.id) {
+        break;
+      }
+
+      if (attempt === 29) {
+        expect(dbRoom?.currentQuestionId).not.toBe(firstQuestion.id);
+      }
+    }
+
+    expect(
+      realtimeGateway.events.some((entry) => entry.event.type === RealtimeEventType.QuestionShown),
+    ).toBe(true);
+  });
+
+  it("восстанавливает host-state из БД после части ответов", async () => {
+    const organizer = await createOrganizer("room-host-state");
+    const quiz = await createQuizService().createQuiz(organizer.id, {
+      title: "Host state quiz",
+      questions: [createSingleQuestion()],
+    });
+    const roomService = createRoomService();
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+    const participant = await roomService.joinRoom(room.id, { displayName: "Участник" });
+
+    await roomService.startRoom(organizer.id, room.id);
+
+    await roomService.submitAnswer(room.id, {
+      roomParticipantId: participant.id,
+      questionId: quiz.questions[0]!.id,
+      answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
+      answerTimeMs: 500,
+    });
+
+    const hostState = await roomService.getHostState(organizer.id, room.id);
+
+    expect(hostState).toMatchObject({
+      answeredCount: 1,
+      activeParticipantCount: 0,
+      phase: "live",
+      submissions: [
+        {
+          displayName: "Участник",
+          answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
+        },
+      ],
+    });
+    expect(hostState.correctOptionIds).toBeUndefined();
+  });
+
+  it("не даёт showQuestion во время closing", async () => {
+    vi.useFakeTimers();
+
+    const organizer = await createOrganizer("room-show-closing");
+    const quiz = await createQuizService().createQuiz(organizer.id, {
+      title: "Closing quiz",
+      questions: [createSingleQuestion(), createSingleQuestion(1)],
+    });
+    const roomService = createRoomService({ questionRevealDelayMs: 10 });
+    const room = await roomService.createRoom(organizer.id, { quizId: quiz.id });
+    const participant = await roomService.joinRoom(room.id, { displayName: "Участник" });
+
+    await roomService.startRoom(organizer.id, room.id);
+    realtimeGateway.setActiveParticipantIds([participant.id]);
+
+    await roomService.submitAnswer(room.id, {
+      roomParticipantId: participant.id,
+      questionId: quiz.questions[0]!.id,
+      answerOptionIds: [quiz.questions[0]!.answerOptions[0]!.id],
+      answerTimeMs: 500,
+    });
+
+    await expectRejectedWith(
+      roomService.showQuestion(organizer.id, room.id, quiz.questions[1]!.id),
+      ConflictError,
+    );
   });
 });

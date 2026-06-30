@@ -5,8 +5,10 @@ import { AnswerMode, ParticipantStatus, RoomStatus } from "../../generated/prism
 import { RealtimeEventType, type RealtimeGateway } from "../realtime/realtime.interfaces";
 import type {
   AnswerResult,
+  AnswerSubmission,
   CreateRoomInput,
   CurrentQuestionState,
+  HostQuestionState,
   JoinRoomInput,
   LeaderboardItem,
   LiveQuestion,
@@ -17,11 +19,67 @@ import type {
 } from "./rooms.interfaces";
 import { RoomMapper } from "./rooms.mapper";
 
+const QUESTION_REVEAL_DELAY_MS = 2000;
+
+type AdvanceReason = "all_answered" | "timer" | "manual";
+
+interface RoomServiceOptions {
+  questionRevealDelayMs?: number;
+}
+
+interface ClosingState {
+  questionId: EntityId;
+  reason: AdvanceReason;
+}
+
+interface HostRevealSnapshot {
+  questionId: EntityId;
+  correctOptionIds: EntityId[];
+  revealingStartedAt: number;
+}
+
+interface QuestionTimerState {
+  questionId: EntityId;
+  timeoutId: ReturnType<typeof setTimeout>;
+}
+
+interface RevealTimerState {
+  questionId: EntityId;
+  timeoutId: ReturnType<typeof setTimeout>;
+}
+
 export class RoomServiceImpl implements RoomService {
+  private readonly questionTimers = new Map<EntityId, QuestionTimerState>();
+  private readonly revealTimers = new Map<EntityId, RevealTimerState>();
+  private readonly closingState = new Map<EntityId, ClosingState>();
+  private readonly hostSnapshots = new Map<EntityId, HostRevealSnapshot>();
+  private readonly inFlightTimerWork = new Set<Promise<void>>();
+  private readonly questionRevealDelayMs: number;
+  private disposed = false;
+
   constructor(
     private readonly prisma: PrismaClient,
     private readonly realtimeGateway: RealtimeGateway,
-  ) {}
+    options?: RoomServiceOptions,
+  ) {
+    this.questionRevealDelayMs = options?.questionRevealDelayMs ?? QUESTION_REVEAL_DELAY_MS;
+  }
+
+  dispose(): void {
+    this.disposed = true;
+
+    for (const roomId of [...this.questionTimers.keys()]) {
+      this.clearQuestionTimer(roomId);
+    }
+
+    for (const roomId of [...this.revealTimers.keys()]) {
+      this.clearRevealTimer(roomId);
+    }
+
+    this.closingState.clear();
+    this.hostSnapshots.clear();
+    this.inFlightTimerWork.clear();
+  }
 
   async createRoom(organizerId: EntityId, input: CreateRoomInput): Promise<RoomSummary> {
     const quiz = await this.prisma.quiz.findFirst({
@@ -122,6 +180,12 @@ export class RoomServiceImpl implements RoomService {
     };
   }
 
+  async getHostState(organizerId: EntityId, roomId: EntityId): Promise<HostQuestionState> {
+    await this.findOrganizerRoom(organizerId, roomId);
+
+    return this.buildHostState(roomId);
+  }
+
   async joinRoom(roomId: EntityId, input: JoinRoomInput): Promise<RoomParticipantDetails> {
     const room = await this.prisma.room.findUnique({
       where: { id: roomId },
@@ -219,6 +283,10 @@ export class RoomServiceImpl implements RoomService {
       question: liveQuestion,
     });
 
+    if (liveQuestion) {
+      this.scheduleQuestionTimer(roomId, liveQuestion.id, liveQuestion.endsAt);
+    }
+
     return liveQuestion;
   }
 
@@ -227,43 +295,35 @@ export class RoomServiceImpl implements RoomService {
     roomId: EntityId,
     questionId: EntityId,
   ): Promise<LiveQuestion> {
+    if (this.isQuestionClosing(roomId)) {
+      throw new ConflictError("Question is closing");
+    }
+
     const room = await this.findOrganizerRoom(organizerId, roomId);
 
     if (room.status !== RoomStatus.ACTIVE) {
       throw new BadRequestError("Room is not active");
     }
 
-    const question = await this.prisma.question.findFirst({
-      where: {
-        id: questionId,
-        quizId: room.quizId,
+    return this.showQuestionInternal(organizerId, roomId, room.quizId, questionId);
+  }
+
+  async advanceQuestion(organizerId: EntityId, roomId: EntityId): Promise<{ ok: true }> {
+    await this.findOrganizerRoom(organizerId, roomId);
+
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: {
+        status: true,
+        currentQuestionId: true,
       },
-      include: this.liveQuestionInclude(),
     });
 
-    if (!question) {
-      throw new NotFoundError("Question not found");
+    if (room?.status === RoomStatus.ACTIVE && room.currentQuestionId) {
+      await this.closeQuestionAndAdvance(roomId, "manual", room.currentQuestionId);
     }
 
-    const startedAt = new Date();
-
-    await this.prisma.room.update({
-      where: { id: roomId },
-      data: {
-        currentQuestionId: question.id,
-        currentQuestionStartedAt: startedAt,
-      },
-    });
-
-    const liveQuestion = RoomMapper.toLiveQuestion(question, startedAt);
-
-    this.realtimeGateway.publishToRoom(roomId, {
-      type: RealtimeEventType.QuestionShown,
-      roomId,
-      question: liveQuestion,
-    });
-
-    return liveQuestion;
+    return { ok: true };
   }
 
   async submitAnswer(roomId: EntityId, input: SubmitAnswerInput): Promise<AnswerResult> {
@@ -285,6 +345,10 @@ export class RoomServiceImpl implements RoomService {
       throw new BadRequestError("Room is not accepting answers");
     }
 
+    if (this.isQuestionClosing(roomId)) {
+      throw new BadRequestError("Question is closing");
+    }
+
     if (room.currentQuestionId !== input.questionId) {
       throw new BadRequestError("Question is not current");
     }
@@ -294,7 +358,7 @@ export class RoomServiceImpl implements RoomService {
         id: input.roomParticipantId,
         roomId,
       },
-      select: { id: true, status: true },
+      select: { id: true, status: true, displayName: true },
     });
 
     if (!participant) {
@@ -379,17 +443,28 @@ export class RoomServiceImpl implements RoomService {
       },
     });
     const leaderboard = await this.getLeaderboard(roomId);
+    const activeParticipantCount = this.realtimeGateway.getActiveParticipantIds(roomId).length;
 
     this.realtimeGateway.publishToOrganizer(roomId, {
       type: RealtimeEventType.AnswerSubmitted,
       roomId,
       answeredCount,
+      activeParticipantCount,
+      submission: {
+        roomParticipantId: input.roomParticipantId,
+        displayName: participant.displayName,
+        answerOptionIds: input.answerOptionIds,
+      },
     });
     this.realtimeGateway.publishToOrganizer(roomId, {
       type: RealtimeEventType.LeaderboardUpdated,
       roomId,
       leaderboard,
     });
+
+    if (await this.hasAllActiveParticipantsAnswered(roomId, input.questionId)) {
+      await this.closeQuestionAndAdvance(roomId, "all_answered", input.questionId);
+    }
 
     return answer;
   }
@@ -417,7 +492,242 @@ export class RoomServiceImpl implements RoomService {
   }
 
   async finishRoom(organizerId: EntityId, roomId: EntityId): Promise<LeaderboardItem[]> {
-    const room = await this.findOrganizerRoom(organizerId, roomId);
+    await this.findOrganizerRoom(organizerId, roomId);
+
+    return this.finishRoomInternal(roomId);
+  }
+
+  private async buildHostState(roomId: EntityId): Promise<HostQuestionState> {
+    const currentQuestionState = await this.getCurrentQuestion(roomId);
+    const questionId = currentQuestionState.question?.id ?? null;
+    const submissions =
+      questionId === null ? [] : await this.loadSubmissionsFromDb(roomId, questionId);
+    const closing = this.closingState.get(roomId);
+    const phase =
+      questionId !== null && closing?.questionId === questionId ? "revealing" : "live";
+
+    let correctOptionIds: EntityId[] | undefined;
+
+    if (phase === "revealing" && questionId !== null) {
+      correctOptionIds =
+        this.hostSnapshots.get(roomId)?.correctOptionIds ??
+        (await this.loadCorrectOptionIds(questionId));
+    }
+
+    return {
+      question: currentQuestionState.question,
+      answeredCount: currentQuestionState.answeredCount,
+      activeParticipantCount: this.realtimeGateway.getActiveParticipantIds(roomId).length,
+      submissions,
+      phase,
+      correctOptionIds,
+    };
+  }
+
+  private async closeQuestionAndAdvance(
+    roomId: EntityId,
+    reason: AdvanceReason,
+    knownQuestionId?: EntityId,
+  ): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+
+    if (knownQuestionId !== undefined) {
+      if (this.closingState.get(roomId)?.questionId === knownQuestionId) {
+        return;
+      }
+
+      this.closingState.set(roomId, { questionId: knownQuestionId, reason });
+      this.clearQuestionTimer(roomId);
+    }
+
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: {
+        id: true,
+        organizerId: true,
+        quizId: true,
+        status: true,
+        currentQuestionId: true,
+      },
+    });
+
+    if (!room || room.status !== RoomStatus.ACTIVE || !room.currentQuestionId) {
+      if (knownQuestionId !== undefined) {
+        this.clearClosingState(roomId);
+      }
+
+      return;
+    }
+
+    if (this.disposed) {
+      this.clearClosingState(roomId);
+      return;
+    }
+
+    const questionId = room.currentQuestionId;
+
+    if (knownQuestionId !== undefined && knownQuestionId !== questionId) {
+      this.clearClosingState(roomId);
+      return;
+    }
+
+    if (knownQuestionId === undefined) {
+      if (this.closingState.get(roomId)?.questionId === questionId) {
+        return;
+      }
+
+      this.closingState.set(roomId, { questionId, reason });
+      this.clearQuestionTimer(roomId);
+    }
+
+    const correctOptionIds = await this.loadCorrectOptionIds(questionId);
+
+    this.hostSnapshots.set(roomId, {
+      questionId,
+      correctOptionIds,
+      revealingStartedAt: Date.now(),
+    });
+
+    this.realtimeGateway.publishToOrganizer(roomId, {
+      type: RealtimeEventType.QuestionRevealed,
+      roomId,
+      questionId,
+      correctOptionIds,
+    });
+
+    this.clearRevealTimer(roomId);
+
+    const timeoutId = setTimeout(() => {
+      this.revealTimers.delete(roomId);
+      this.trackTimerWork(
+        this.completeQuestionAdvance(roomId, room.organizerId, room.quizId, questionId),
+      );
+    }, this.questionRevealDelayMs);
+
+    this.revealTimers.set(roomId, { questionId, timeoutId });
+  }
+
+  private async completeQuestionAdvance(
+    roomId: EntityId,
+    organizerId: EntityId,
+    quizId: EntityId,
+    questionId: EntityId,
+  ): Promise<void> {
+    if (this.disposed) {
+      return;
+    }
+
+    try {
+      const room = await this.prisma.room.findUnique({
+        where: { id: roomId },
+        select: {
+          status: true,
+          currentQuestionId: true,
+        },
+      });
+
+      if (
+        this.disposed ||
+        !room ||
+        room.status !== RoomStatus.ACTIVE ||
+        room.currentQuestionId !== questionId ||
+        this.closingState.get(roomId)?.questionId !== questionId
+      ) {
+        return;
+      }
+
+      const currentQuestion = await this.prisma.question.findUnique({
+        where: { id: questionId },
+        select: { orderIndex: true },
+      });
+
+      if (this.disposed || !currentQuestion) {
+        return;
+      }
+
+      const nextQuestion = await this.prisma.question.findFirst({
+        where: {
+          quizId,
+          orderIndex: { gt: currentQuestion.orderIndex },
+        },
+        orderBy: { orderIndex: "asc" },
+        select: { id: true },
+      });
+
+      if (this.disposed) {
+        return;
+      }
+
+      if (nextQuestion) {
+        await this.showQuestionInternal(organizerId, roomId, quizId, nextQuestion.id);
+      } else {
+        await this.finishRoomInternal(roomId);
+      }
+    } finally {
+      if (!this.disposed) {
+        this.clearClosingState(roomId);
+      }
+    }
+  }
+
+  private async showQuestionInternal(
+    organizerId: EntityId,
+    roomId: EntityId,
+    quizId: EntityId,
+    questionId: EntityId,
+  ): Promise<LiveQuestion> {
+    if (this.disposed) {
+      throw new BadRequestError("Room service is disposed");
+    }
+
+    const question = await this.prisma.question.findFirst({
+      where: {
+        id: questionId,
+        quizId,
+      },
+      include: this.liveQuestionInclude(),
+    });
+
+    if (!question) {
+      throw new NotFoundError("Question not found");
+    }
+
+    const startedAt = new Date();
+
+    await this.prisma.room.update({
+      where: { id: roomId },
+      data: {
+        currentQuestionId: question.id,
+        currentQuestionStartedAt: startedAt,
+      },
+    });
+
+    const liveQuestion = RoomMapper.toLiveQuestion(question, startedAt);
+
+    this.realtimeGateway.publishToRoom(roomId, {
+      type: RealtimeEventType.QuestionShown,
+      roomId,
+      question: liveQuestion,
+    });
+
+    this.scheduleQuestionTimer(roomId, question.id, liveQuestion.endsAt);
+
+    return liveQuestion;
+  }
+
+  private async finishRoomInternal(roomId: EntityId): Promise<LeaderboardItem[]> {
+    this.clearQuestionTimer(roomId);
+
+    const room = await this.prisma.room.findUnique({
+      where: { id: roomId },
+      select: { status: true },
+    });
+
+    if (!room) {
+      throw new NotFoundError("Room not found");
+    }
 
     if (room.status === RoomStatus.CANCELLED) {
       throw new BadRequestError("Cancelled room cannot be finished");
@@ -455,6 +765,123 @@ export class RoomServiceImpl implements RoomService {
     });
 
     return leaderboard;
+  }
+
+  private async hasAllActiveParticipantsAnswered(
+    roomId: EntityId,
+    questionId: EntityId,
+  ): Promise<boolean> {
+    const activeParticipantIds = this.realtimeGateway.getActiveParticipantIds(roomId);
+
+    if (activeParticipantIds.length === 0) {
+      return false;
+    }
+
+    const answers = await this.prisma.participantAnswer.findMany({
+      where: {
+        roomId,
+        questionId,
+        roomParticipantId: { in: activeParticipantIds },
+      },
+      select: { roomParticipantId: true },
+    });
+    const answeredIds = new Set(answers.map((answer) => answer.roomParticipantId));
+
+    return activeParticipantIds.every((participantId) => answeredIds.has(participantId));
+  }
+
+  private async loadSubmissionsFromDb(
+    roomId: EntityId,
+    questionId: EntityId,
+  ): Promise<AnswerSubmission[]> {
+    const answers = await this.prisma.participantAnswer.findMany({
+      where: {
+        roomId,
+        questionId,
+      },
+      include: {
+        roomParticipant: {
+          select: { displayName: true },
+        },
+        participantAnswerOptions: {
+          select: { answerOptionId: true },
+        },
+      },
+      orderBy: { submittedAt: "asc" },
+    });
+
+    return answers.map((answer) => ({
+      displayName: answer.roomParticipant.displayName,
+      answerOptionIds: answer.participantAnswerOptions.map((option) => option.answerOptionId),
+    }));
+  }
+
+  private async loadCorrectOptionIds(questionId: EntityId): Promise<EntityId[]> {
+    const options = await this.prisma.answerOption.findMany({
+      where: {
+        questionId,
+        isCorrect: true,
+      },
+      select: { id: true },
+    });
+
+    return options.map((option) => option.id);
+  }
+
+  private scheduleQuestionTimer(roomId: EntityId, questionId: EntityId, endsAt: string): void {
+    this.clearQuestionTimer(roomId);
+
+    const delayMs = Math.max(0, new Date(endsAt).getTime() - Date.now());
+
+    const timeoutId = setTimeout(() => {
+      this.trackTimerWork(this.closeQuestionAndAdvance(roomId, "timer", questionId));
+    }, delayMs);
+
+    this.questionTimers.set(roomId, { questionId, timeoutId });
+  }
+
+  private clearQuestionTimer(roomId: EntityId): void {
+    const timer = this.questionTimers.get(roomId);
+
+    if (!timer) {
+      return;
+    }
+
+    clearTimeout(timer.timeoutId);
+    this.questionTimers.delete(roomId);
+  }
+
+  private trackTimerWork(work: Promise<void>): void {
+    if (this.disposed) {
+      return;
+    }
+
+    this.inFlightTimerWork.add(work);
+
+    void work.finally(() => {
+      this.inFlightTimerWork.delete(work);
+    });
+  }
+
+  private clearRevealTimer(roomId: EntityId): void {
+    const timer = this.revealTimers.get(roomId);
+
+    if (!timer) {
+      return;
+    }
+
+    clearTimeout(timer.timeoutId);
+    this.revealTimers.delete(roomId);
+  }
+
+  private clearClosingState(roomId: EntityId): void {
+    this.clearRevealTimer(roomId);
+    this.closingState.delete(roomId);
+    this.hostSnapshots.delete(roomId);
+  }
+
+  private isQuestionClosing(roomId: EntityId): boolean {
+    return this.closingState.has(roomId);
   }
 
   private async findOrganizerRoom(organizerId: EntityId, roomId: EntityId) {

@@ -43,7 +43,10 @@ export const RoomHostPage = observer(() => {
     totalQuestions,
     topLeaderboard,
     answeredCount,
-    joinedCount,
+    activeParticipantCount,
+    optionRespondents,
+    revealedCorrectOptionIds,
+    isQuestionClosing,
     inviteUrl,
     isActionPending,
     isWaiting,
@@ -107,6 +110,8 @@ export const RoomHostPage = observer(() => {
                       total={totalQuestions}
                       selectedOptionIds={[]}
                       readonly
+                      respondentsByOption={optionRespondents}
+                      correctOptionIds={revealedCorrectOptionIds}
                     />
                   ) : (
                     <Text size="sm" c="dimmed">
@@ -123,9 +128,10 @@ export const RoomHostPage = observer(() => {
                       isFinished={isFinished}
                       hasQuestion={Boolean(currentQuestion)}
                       answeredCount={answeredCount}
-                      joinedCount={joinedCount}
+                      activeParticipantCount={activeParticipantCount}
                       inviteUrl={inviteUrl}
                       isActionPending={isActionPending}
+                      isQuestionClosing={isQuestionClosing}
                       onStart={() => void roomStore.start()}
                       onNext={() => void roomStore.nextQuestion()}
                       onFinish={() => void roomStore.finish()}

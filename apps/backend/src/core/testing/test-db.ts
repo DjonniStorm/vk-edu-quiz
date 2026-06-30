@@ -63,6 +63,14 @@ export const deleteTestUsersByEmail = async (emails: string[]): Promise<void> =>
     },
   });
 
+  await prisma.quiz.deleteMany({
+    where: {
+      ownerId: {
+        in: userIds,
+      },
+    },
+  });
+
   await prisma.user.deleteMany({
     where: {
       id: {
