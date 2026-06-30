@@ -51,6 +51,7 @@ export const en = {
       groupTitle: "My quizzes",
       groupSubtitle: "Recent quizzes and live rooms",
       viewAll: "View all",
+      loadFailed: "Failed to load dashboard",
       stats: {
         totalQuizzes: {
           label: "Total quizzes",
@@ -72,7 +73,9 @@ export const en = {
     },
     quizCreate: {
       title: "Create quiz",
+      editTitle: "Edit quiz",
       subtitle: "Configure your new assessment session.",
+      editSubtitle: "Update quiz settings and questions.",
       saveDraft: "Save draft",
       steps: {
         basicInfo: "Basic information",
@@ -127,6 +130,7 @@ export const en = {
         nextToRules: "Next: Rules",
         nextToReview: "Next: Review",
         publish: "Publish quiz",
+        saveChanges: "Save changes",
       },
       validation: {
         titleRequired: "Enter a quiz title",
@@ -142,7 +146,18 @@ export const en = {
         published: "Quiz published",
         saveFailed: "Failed to save draft",
         publishFailed: "Failed to publish quiz",
+        loadFailed: "Failed to load quiz",
+        cannotEditWithRooms: "This quiz already has game sessions. Duplicate it to make changes.",
       },
+    },
+    quizResults: {
+      title: "Quiz results",
+      titleWithQuiz: "Results: {{title}}",
+      subtitle: "Finished sessions and leaderboards.",
+      empty: "No finished sessions yet.",
+      sessionMeta: "{{count}} participants",
+      loadFailed: "Failed to load results",
+      sessionLoadFailed: "Failed to load session results",
     },
     room: {
       errors: {
@@ -216,6 +231,7 @@ export const en = {
       active: "Active",
       draft: "Draft",
       published: "Ready",
+      archived: "Archived",
     },
     actions: {
       finish: "Finish",
@@ -223,7 +239,12 @@ export const en = {
       continue: "Continue",
       start: "Start",
       edit: "Edit",
+      duplicate: "Duplicate",
       results: "Results",
+    },
+    notifications: {
+      duplicated: "Quiz duplicated",
+      duplicateFailed: "Failed to duplicate quiz",
     },
     meta: {
       questions: "{{count}} questions",

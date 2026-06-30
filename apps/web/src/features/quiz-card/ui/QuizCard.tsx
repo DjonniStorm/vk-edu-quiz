@@ -1,29 +1,34 @@
 import { useState } from "react";
 import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { QuizStatus } from "@quiz/shared";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
-import { buildRoomHostPath } from "@/app/routes";
+import { buildQuizEditPath, buildQuizResultsPath, buildRoomHostPath } from "@/app/routes";
+import { QUIZ_STATUS_COLOR, QUIZ_STATUS_LABEL_KEY } from "@/features/quiz-card/model/quiz-status.ui";
 import { errorStore } from "@/entities/error";
-import { getApiErrorMessage, isCancelError, roomsApi } from "@/shared/api";
-import type { DashboardQuizDto, DashboardQuizStatus } from "@/shared/services";
+import { getApiErrorMessage, isCancelError, quizzesApi, roomsApi } from "@/shared/api";
+import { showSuccessNotification } from "@/shared/lib";
+import type { DashboardQuizDto } from "@/shared/services";
 
 export interface QuizCardProps {
   quiz: DashboardQuizDto;
 }
 
-const statusColor: Record<DashboardQuizStatus, string> = {
-  active: "blue",
-  draft: "yellow",
-  published: "green",
-};
+const EMPTY_VALUE = "—";
 
 export const QuizCard = ({ quiz }: QuizCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
-  const statusLabel = t(LANG_KEYS.quizzes.status[quiz.status]);
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  const statusLabel = t(QUIZ_STATUS_LABEL_KEY[quiz.status]);
+  const category = quiz.category?.trim() || EMPTY_VALUE;
+  const description = quiz.description?.trim() || EMPTY_VALUE;
+  const canEdit = !quiz.hasRooms && quiz.status !== QuizStatus.Archived;
+  const showDuplicate = quiz.hasRooms;
+  const showResults = quiz.status !== QuizStatus.Draft;
 
   const openRoom = async () => {
     setIsCreatingRoom(true);
@@ -42,14 +47,99 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
     }
   };
 
+  const duplicateQuiz = async () => {
+    setIsDuplicating(true);
+
+    try {
+      const copy = await quizzesApi.duplicate(quiz.id);
+      showSuccessNotification(t(LANG_KEYS.quizzes.notifications.duplicated));
+      navigate(buildQuizEditPath(copy.id));
+    } catch (error) {
+      if (isCancelError(error)) {
+        return;
+      }
+
+      errorStore.push(getApiErrorMessage(error, t(LANG_KEYS.quizzes.notifications.duplicateFailed)));
+    } finally {
+      setIsDuplicating(false);
+    }
+  };
+
+  const renderSecondaryActions = () => {
+    if (quiz.status === QuizStatus.Draft) {
+      if (canEdit) {
+        return (
+          <Button variant="default" onClick={() => navigate(buildQuizEditPath(quiz.id))}>
+            {t(LANG_KEYS.quizzes.actions.continue)}
+          </Button>
+        );
+      }
+
+      if (showDuplicate) {
+        return (
+          <Button variant="default" loading={isDuplicating} onClick={() => void duplicateQuiz()}>
+            {t(LANG_KEYS.quizzes.actions.duplicate)}
+          </Button>
+        );
+      }
+
+      return null;
+    }
+
+    return (
+      <Group gap="xs">
+        {canEdit ? (
+          <Button variant="default" onClick={() => navigate(buildQuizEditPath(quiz.id))}>
+            {t(
+              quiz.status === QuizStatus.Published
+                ? LANG_KEYS.quizzes.actions.edit
+                : LANG_KEYS.quizzes.actions.continue,
+            )}
+          </Button>
+        ) : null}
+        {showDuplicate ? (
+          <Button variant="default" loading={isDuplicating} onClick={() => void duplicateQuiz()}>
+            {t(LANG_KEYS.quizzes.actions.duplicate)}
+          </Button>
+        ) : null}
+        {!canEdit && !showDuplicate && quiz.status === QuizStatus.Archived ? (
+          <Button variant="default" disabled>
+            {t(LANG_KEYS.quizzes.actions.edit)}
+          </Button>
+        ) : null}
+        {showResults ? (
+          <Button variant="subtle" onClick={() => navigate(buildQuizResultsPath(quiz.id))}>
+            {t(LANG_KEYS.quizzes.actions.results)}
+          </Button>
+        ) : null}
+      </Group>
+    );
+  };
+
+  const renderPrimaryAction = () => {
+    if (quiz.status === QuizStatus.Draft) {
+      return <Button disabled>{t(LANG_KEYS.quizzes.actions.start)}</Button>;
+    }
+
+    if (quiz.status === QuizStatus.Published) {
+      return (
+        <Button loading={isCreatingRoom} onClick={() => void openRoom()}>
+          {t(LANG_KEYS.quizzes.actions.start)}
+        </Button>
+      );
+    }
+
+    return <Button disabled>{t(LANG_KEYS.quizzes.actions.start)}</Button>;
+  };
+
   return (
     <Card radius="md" withBorder padding={0}>
       <Stack gap="md" p="lg" flex={1}>
         <Group justify="space-between" align="flex-start">
           <Badge color="indigo" variant="light">
-            {quiz.category}
+            {category}
           </Badge>
-          <Badge color={statusColor[quiz.status]} variant="light">
+          <Badge color={QUIZ_STATUS_COLOR[quiz.status]} variant="light">
             {statusLabel}
           </Badge>
         </Group>
@@ -57,7 +147,7 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
         <Stack gap={6}>
           <Title order={4}>{quiz.title}</Title>
           <Text size="sm" c="dimmed" lineClamp={3}>
-            {quiz.description}
+            {description}
           </Text>
         </Stack>
 
@@ -72,31 +162,8 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
       </Stack>
 
       <Group justify="space-between" p="md" bg="#fafbff" style={{ borderTop: "1px solid #edf0f7" }}>
-        {quiz.status === "active" ? (
-          <>
-            <Button color="red" variant="subtle">
-              {t(LANG_KEYS.quizzes.actions.finish)}
-            </Button>
-            <Button loading={isCreatingRoom} onClick={() => void openRoom()}>
-              {t(LANG_KEYS.quizzes.actions.room)}
-            </Button>
-          </>
-        ) : quiz.status === "draft" ? (
-          <>
-            <Button variant="default">{t(LANG_KEYS.quizzes.actions.continue)}</Button>
-            <Button disabled>{t(LANG_KEYS.quizzes.actions.start)}</Button>
-          </>
-        ) : (
-          <>
-            <Group gap="xs">
-              <Button variant="default">{t(LANG_KEYS.quizzes.actions.edit)}</Button>
-              <Button variant="subtle">{t(LANG_KEYS.quizzes.actions.results)}</Button>
-            </Group>
-            <Button loading={isCreatingRoom} onClick={() => void openRoom()}>
-              {t(LANG_KEYS.quizzes.actions.start)}
-            </Button>
-          </>
-        )}
+        {renderSecondaryActions()}
+        {renderPrimaryAction()}
       </Group>
     </Card>
   );

@@ -3,6 +3,7 @@ import type { PrismaClient } from "../../generated/prisma/client";
 import { RoomStatus } from "../../generated/prisma/enums";
 import type {
   HistoryService,
+  OrganizerHistorySummary,
   OrganizerRoomHistoryItem,
   ParticipantQuizHistoryItem,
   RoomResults,
@@ -99,6 +100,32 @@ export class HistoryServiceImpl implements HistoryService {
       total,
       limit,
       offset,
+    };
+  }
+
+  async getOrganizerSummary(organizerId: EntityId): Promise<OrganizerHistorySummary> {
+    const completedSessions = await this.prisma.room.count({
+      where: {
+        organizerId,
+        status: RoomStatus.FINISHED,
+      },
+    });
+
+    const participantStats = await this.prisma.roomParticipant.aggregate({
+      where: {
+        room: {
+          organizerId,
+          status: RoomStatus.FINISHED,
+        },
+      },
+      _count: { _all: true },
+      _avg: { score: true },
+    });
+
+    return {
+      completedSessions,
+      totalParticipants: participantStats._count._all,
+      averageScore: participantStats._avg.score ?? 0,
     };
   }
 

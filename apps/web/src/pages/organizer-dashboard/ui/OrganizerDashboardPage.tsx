@@ -1,4 +1,4 @@
-import { Center, Loader, SimpleGrid, Stack } from "@mantine/core";
+import { Center, Loader, SimpleGrid, Stack, Text } from "@mantine/core";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -34,6 +34,11 @@ export const OrganizerDashboardPage = observer(() => {
                 <QuizCard key={quiz.id} quiz={quiz} />
               ))}
             </SimpleGrid>
+            {organizerDashboardStore.quizzes.length === 0 ? (
+              <Text c="dimmed" ta="center">
+                {t(LANG_KEYS.quizzes.empty)}
+              </Text>
+            ) : null}
           </Stack>
         </Stack>
       )}

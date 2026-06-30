@@ -4,13 +4,14 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { LANG_KEYS } from "@/app/i18n";
 import i18n from "@/app/i18n";
 import { errorStore } from "@/entities/error";
-import { isCancelError, quizzesApi } from "@/shared/api";
+import { getApiErrorMessage, isCancelError, quizzesApi } from "@/shared/api";
 import { showSuccessNotification, showWarningNotification } from "@/shared/lib";
 
 import {
   mapDraftToCreateInput,
   mapDraftToQuestionsInput,
   mapDraftToUpdateInput,
+  mapQuizDetailsToDraft,
 } from "./quiz-create.mapper";
 import type { DraftAnswerOption, DraftQuestion, QuizDraft } from "./quiz-create.types";
 import { QUIZ_CREATE_STEPS } from "./quiz-create.types";
@@ -45,10 +46,17 @@ export class QuizCreateStore {
   draft: QuizDraft = createInitialDraft();
   selectedQuestionClientId: string | null = null;
   quizId: string | null = null;
+  loadedStatus: QuizStatus | null = null;
+  isLoadingQuiz = false;
+  loadError: string | null = null;
 
   constructor() {
     makeAutoObservable(this);
     this.selectedQuestionClientId = this.draft.questions[0]?.clientId ?? null;
+  }
+
+  get isEditingPublished(): boolean {
+    return this.loadedStatus === QuizStatus.Published;
   }
 
   get selectedQuestion(): DraftQuestion | null {
@@ -313,6 +321,45 @@ export class QuizCreateStore {
     return true;
   }
 
+  async loadQuiz(quizId: string): Promise<void> {
+    this.isLoadingQuiz = true;
+    this.loadError = null;
+
+    try {
+      const quiz = await quizzesApi.getQuiz(quizId);
+
+      if (quiz.hasRooms) {
+        runInAction(() => {
+          this.loadError = i18n.t(LANG_KEYS.pages.quizCreate.notifications.cannotEditWithRooms);
+        });
+        return;
+      }
+
+      runInAction(() => {
+        this.quizId = quiz.id;
+        this.loadedStatus = quiz.status;
+        this.draft = mapQuizDetailsToDraft(quiz);
+        this.selectedQuestionClientId = this.draft.questions[0]?.clientId ?? null;
+        this.activeStep = QUIZ_CREATE_STEPS.basicInfo;
+      });
+    } catch (error) {
+      if (isCancelError(error)) {
+        return;
+      }
+
+      runInAction(() => {
+        this.loadError = getApiErrorMessage(
+          error,
+          i18n.t(LANG_KEYS.pages.quizCreate.notifications.loadFailed),
+        );
+      });
+    } finally {
+      runInAction(() => {
+        this.isLoadingQuiz = false;
+      });
+    }
+  }
+
   async saveDraft(): Promise<boolean> {
     if (!this.isBasicInfoValid(true)) {
       return false;
@@ -366,6 +413,10 @@ export class QuizCreateStore {
   }
 
   async publish(): Promise<boolean> {
+    if (this.loadedStatus === QuizStatus.Published) {
+      return this.saveDraft();
+    }
+
     if (!this.validateStep(QUIZ_CREATE_STEPS.questions)) {
       return false;
     }
@@ -396,6 +447,9 @@ export class QuizCreateStore {
     this.draft = createInitialDraft();
     this.selectedQuestionClientId = this.draft.questions[0]?.clientId ?? null;
     this.quizId = null;
+    this.loadedStatus = null;
+    this.isLoadingQuiz = false;
+    this.loadError = null;
   }
 }
 

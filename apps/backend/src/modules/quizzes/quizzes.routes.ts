@@ -85,4 +85,15 @@ export const createQuizRoutes = ({ quizService, authContextProvider }: QuizRoute
         summary: "Replace quiz questions",
         security: [{ BearerAuth: [] }],
       },
+    })
+    .post("/:quizId/duplicate", async ({ headers, params }) => {
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
+
+      return quizService.duplicateQuiz(currentUser.id, params.quizId);
+    }, {
+      detail: {
+        tags: ["Quizzes"],
+        summary: "Duplicate quiz",
+        security: [{ BearerAuth: [] }],
+      },
     });

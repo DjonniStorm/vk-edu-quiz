@@ -53,6 +53,7 @@ export const ru: Translation = {
       groupTitle: "Мои квизы",
       groupSubtitle: "Недавние квизы и активные комнаты",
       viewAll: "Смотреть все",
+      loadFailed: "Не удалось загрузить дашборд",
       stats: {
         totalQuizzes: {
           label: "Всего квизов",
@@ -74,7 +75,9 @@ export const ru: Translation = {
     },
     quizCreate: {
       title: "Создание квиза",
+      editTitle: "Редактирование квиза",
       subtitle: "Настройте новую сессию.",
+      editSubtitle: "Измените настройки и вопросы квиза.",
       saveDraft: "Сохранить черновик",
       steps: {
         basicInfo: "Основная информация",
@@ -129,6 +132,7 @@ export const ru: Translation = {
         nextToRules: "Далее: Правила",
         nextToReview: "Далее: Проверка",
         publish: "Опубликовать квиз",
+        saveChanges: "Сохранить изменения",
       },
       validation: {
         titleRequired: "Укажите название квиза",
@@ -144,7 +148,19 @@ export const ru: Translation = {
         published: "Квиз опубликован",
         saveFailed: "Не удалось сохранить черновик",
         publishFailed: "Не удалось опубликовать квиз",
+        loadFailed: "Не удалось загрузить квиз",
+        cannotEditWithRooms:
+          "У этого квиза уже есть игровые сессии. Создайте копию, чтобы внести изменения.",
       },
+    },
+    quizResults: {
+      title: "Результаты квиза",
+      titleWithQuiz: "Результаты: {{title}}",
+      subtitle: "Завершённые сессии и лидерборды.",
+      empty: "Завершённых сессий пока нет.",
+      sessionMeta: "{{count}} участников",
+      loadFailed: "Не удалось загрузить результаты",
+      sessionLoadFailed: "Не удалось загрузить результаты сессии",
     },
     room: {
       errors: {
@@ -218,6 +234,7 @@ export const ru: Translation = {
       active: "Активен",
       draft: "Черновик",
       published: "Готов",
+      archived: "В архиве",
     },
     actions: {
       finish: "Завершить",
@@ -225,7 +242,12 @@ export const ru: Translation = {
       continue: "Продолжить",
       start: "Запустить",
       edit: "Редактировать",
+      duplicate: "Дублировать",
       results: "Результаты",
+    },
+    notifications: {
+      duplicated: "Квиз продублирован",
+      duplicateFailed: "Не удалось продублировать квиз",
     },
     meta: {
       questions: "{{count}} вопросов",

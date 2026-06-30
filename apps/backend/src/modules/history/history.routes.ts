@@ -26,6 +26,17 @@ export const createHistoryRoutes = ({ historyService, authContextProvider }: His
         security: [{ BearerAuth: [] }],
       },
     })
+    .get("/organizer/summary", async ({ headers }) => {
+      const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
+
+      return historyService.getOrganizerSummary(currentUser.id);
+    }, {
+      detail: {
+        tags: ["History"],
+        summary: "Get organizer dashboard summary",
+        security: [{ BearerAuth: [] }],
+      },
+    })
     .get("/organizer", async ({ headers, query }) => {
       const currentUser = await requireCurrentUser(authContextProvider, headers.authorization);
 

@@ -30,7 +30,10 @@ export class QuizServiceImpl implements QuizService {
         take: limit,
         include: {
           _count: {
-            select: { questions: true },
+            select: { questions: true, rooms: true },
+          },
+          questions: {
+            select: { timeLimitSec: true },
           },
         },
       }),
@@ -115,6 +118,7 @@ export class QuizServiceImpl implements QuizService {
   ): Promise<QuizDetails> {
     this.validateQuestions(questions);
     await this.ensureOwnerQuizExists(ownerId, quizId);
+    await this.ensureQuizHasNoRooms(quizId);
 
     const quiz = await this.prisma.$transaction(async (tx) => {
       await tx.question.deleteMany({
@@ -135,6 +139,36 @@ export class QuizServiceImpl implements QuizService {
     return QuizMapper.toQuizDetails(quiz);
   }
 
+  async duplicateQuiz(ownerId: EntityId, quizId: EntityId): Promise<QuizDetails> {
+    const source = await this.findOwnerQuiz(ownerId, quizId);
+
+    if (!source) {
+      throw new NotFoundError("Quiz not found");
+    }
+
+    const questions: QuestionInput[] = (source.questions ?? []).map((question) => ({
+      text: question.text,
+      answerMode: question.answerMode,
+      orderIndex: question.orderIndex,
+      timeLimitSec: question.timeLimitSec,
+      points: question.points,
+      answerOptions: question.answerOptions.map((option) => ({
+        text: option.text,
+        isCorrect: option.isCorrect,
+        orderIndex: option.orderIndex,
+      })),
+    }));
+
+    return this.createQuiz(ownerId, {
+      title: `${source.title.trim()} (copy)`,
+      description: source.description,
+      category: source.category,
+      showLeaderboardAfterQuestion: source.showLeaderboardAfterQuestion,
+      allowLateJoin: source.allowLateJoin,
+      questions,
+    });
+  }
+
   private async ensureOwnerQuizExists(ownerId: EntityId, quizId: EntityId): Promise<void> {
     const quiz = await this.prisma.quiz.findFirst({
       where: {
@@ -146,6 +180,16 @@ export class QuizServiceImpl implements QuizService {
 
     if (!quiz) {
       throw new NotFoundError("Quiz not found");
+    }
+  }
+
+  private async ensureQuizHasNoRooms(quizId: EntityId): Promise<void> {
+    const roomsCount = await this.prisma.room.count({
+      where: { quizId },
+    });
+
+    if (roomsCount > 0) {
+      throw new BadRequestError("Cannot replace questions for quiz with game sessions");
     }
   }
 
@@ -229,7 +273,7 @@ export class QuizServiceImpl implements QuizService {
         },
       },
       _count: {
-        select: { questions: true },
+        select: { questions: true, rooms: true },
       },
     };
   }

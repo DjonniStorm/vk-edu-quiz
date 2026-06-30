@@ -95,4 +95,28 @@ export interface QuizListItemDto {
   category: string | null;
   status: QuizStatus;
   questionsCount: number;
+  estimatedDurationMinutes: number;
+  hasRooms: boolean;
+}
+
+export interface OrganizerHistorySummaryDto {
+  completedSessions: number;
+  totalParticipants: number;
+  averageScore: number;
+}
+
+export interface OrganizerRoomHistoryItemDto {
+  roomId: EntityId;
+  quizId: EntityId;
+  quizTitle: string;
+  participantsCount: number;
+  startedAt: IsoDateString | null;
+  finishedAt: IsoDateString | null;
+}
+
+export interface RoomResultsDto {
+  roomId: EntityId;
+  quizId: EntityId;
+  quizTitle: string;
+  leaderboard: LeaderboardItemDto[];
 }

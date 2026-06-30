@@ -26,6 +26,12 @@ export interface RoomResults {
   leaderboard: LeaderboardItem[];
 }
 
+export interface OrganizerHistorySummary {
+  completedSessions: number;
+  totalParticipants: number;
+  averageScore: number;
+}
+
 export interface HistoryService {
   listParticipantHistory(
     userId: EntityId,
@@ -35,5 +41,6 @@ export interface HistoryService {
     organizerId: EntityId,
     query?: PaginationQuery,
   ): Promise<PaginatedResult<OrganizerRoomHistoryItem>>;
+  getOrganizerSummary(organizerId: EntityId): Promise<OrganizerHistorySummary>;
   getRoomResults(organizerId: EntityId, roomId: EntityId): Promise<RoomResults | null>;
 }

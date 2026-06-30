@@ -10,7 +10,7 @@ import { AppLoader } from "./AppLoader";
 
 export const Theme = ({ children }: PropsWithChildren) => {
   return (
-    <MantineProvider>
+    <MantineProvider defaultColorScheme="light" forceColorScheme="light">
       <Notifications position="top-right" />
       <AppLoader />
       {children}

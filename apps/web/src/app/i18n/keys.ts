@@ -51,6 +51,7 @@ export const LANG_KEYS = {
       groupTitle: "pages.organizerDashboard.groupTitle",
       groupSubtitle: "pages.organizerDashboard.groupSubtitle",
       viewAll: "pages.organizerDashboard.viewAll",
+      loadFailed: "pages.organizerDashboard.loadFailed",
       stats: {
         totalQuizzes: {
           label: "pages.organizerDashboard.stats.totalQuizzes.label",
@@ -72,7 +73,9 @@ export const LANG_KEYS = {
     },
     quizCreate: {
       title: "pages.quizCreate.title",
+      editTitle: "pages.quizCreate.editTitle",
       subtitle: "pages.quizCreate.subtitle",
+      editSubtitle: "pages.quizCreate.editSubtitle",
       saveDraft: "pages.quizCreate.saveDraft",
       steps: {
         basicInfo: "pages.quizCreate.steps.basicInfo",
@@ -127,6 +130,7 @@ export const LANG_KEYS = {
         nextToRules: "pages.quizCreate.footer.nextToRules",
         nextToReview: "pages.quizCreate.footer.nextToReview",
         publish: "pages.quizCreate.footer.publish",
+        saveChanges: "pages.quizCreate.footer.saveChanges",
       },
       validation: {
         titleRequired: "pages.quizCreate.validation.titleRequired",
@@ -142,7 +146,18 @@ export const LANG_KEYS = {
         published: "pages.quizCreate.notifications.published",
         saveFailed: "pages.quizCreate.notifications.saveFailed",
         publishFailed: "pages.quizCreate.notifications.publishFailed",
+        loadFailed: "pages.quizCreate.notifications.loadFailed",
+        cannotEditWithRooms: "pages.quizCreate.notifications.cannotEditWithRooms",
       },
+    },
+    quizResults: {
+      title: "pages.quizResults.title",
+      titleWithQuiz: "pages.quizResults.titleWithQuiz",
+      subtitle: "pages.quizResults.subtitle",
+      empty: "pages.quizResults.empty",
+      sessionMeta: "pages.quizResults.sessionMeta",
+      loadFailed: "pages.quizResults.loadFailed",
+      sessionLoadFailed: "pages.quizResults.sessionLoadFailed",
     },
     room: {
       errors: {
@@ -216,6 +231,7 @@ export const LANG_KEYS = {
       active: "quizzes.status.active",
       draft: "quizzes.status.draft",
       published: "quizzes.status.published",
+      archived: "quizzes.status.archived",
     },
     actions: {
       finish: "quizzes.actions.finish",
@@ -223,7 +239,12 @@ export const LANG_KEYS = {
       continue: "quizzes.actions.continue",
       start: "quizzes.actions.start",
       edit: "quizzes.actions.edit",
+      duplicate: "quizzes.actions.duplicate",
       results: "quizzes.actions.results",
+    },
+    notifications: {
+      duplicated: "quizzes.notifications.duplicated",
+      duplicateFailed: "quizzes.notifications.duplicateFailed",
     },
     meta: {
       questions: "quizzes.meta.questions",

@@ -46,6 +46,8 @@ export interface QuizListItem {
   category: string | null;
   status: AppQuizStatus;
   questionsCount: number;
+  estimatedDurationMinutes: number;
+  hasRooms: boolean;
 }
 
 export interface QuizDetails extends QuizListItem {
@@ -78,4 +80,5 @@ export interface QuizService {
   updateQuiz(ownerId: EntityId, quizId: EntityId, input: UpdateQuizInput): Promise<QuizDetails>;
   deleteQuiz(ownerId: EntityId, quizId: EntityId): Promise<void>;
   replaceQuestions(ownerId: EntityId, quizId: EntityId, questions: QuestionInput[]): Promise<QuizDetails>;
+  duplicateQuiz(ownerId: EntityId, quizId: EntityId): Promise<QuizDetails>;
 }

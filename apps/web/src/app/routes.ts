@@ -3,12 +3,16 @@ export const ROUTES = {
   login: "/auth/login",
   register: "/auth/register",
   quizCreate: "/quizzes/create",
+  quizEdit: "/quizzes/:quizId/edit",
+  quizResults: "/quizzes/:quizId/results",
   roomPlay: "/rooms/:roomId",
   roomHost: "/rooms/:roomId/host",
 } as const;
 
 export const buildRoomPlayPath = (roomId: string) => `/rooms/${roomId}`;
 export const buildRoomHostPath = (roomId: string) => `/rooms/${roomId}/host`;
+export const buildQuizEditPath = (quizId: string) => `/quizzes/${quizId}/edit`;
+export const buildQuizResultsPath = (quizId: string) => `/quizzes/${quizId}/results`;
 
 export const AUTH_RETURN_URL_QUERY = "returnUrl";
 

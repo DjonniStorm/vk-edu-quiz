@@ -1,8 +1,9 @@
-import { Button, Group, Paper, Stack, Stepper, Text, Title } from "@mantine/core";
+import { Alert, Button, Center, Group, Loader, Paper, Stack, Stepper, Text, Title } from "@mantine/core";
+import { QuizStatus } from "@quiz/shared";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
 import { ROUTES } from "@/app/routes";
@@ -18,11 +19,21 @@ import { RulesStep } from "./steps/RulesStep";
 export const QuizCreatePage = observer(() => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeStep } = quizCreateStore;
+  const { quizId } = useParams<{ quizId?: string }>();
+  const { activeStep, isLoadingQuiz, loadError, loadedStatus } = quizCreateStore;
+  const isEditMode = Boolean(quizId);
 
   useEffect(() => {
-    quizCreateStore.reset();
-  }, []);
+    if (quizId) {
+      void quizCreateStore.loadQuiz(quizId);
+    } else {
+      quizCreateStore.reset();
+    }
+
+    return () => {
+      quizCreateStore.reset();
+    };
+  }, [quizId]);
 
   const handleSaveDraft = () => {
     void quizCreateStore.saveDraft();
@@ -30,6 +41,15 @@ export const QuizCreatePage = observer(() => {
 
   const handleNext = () => {
     if (activeStep === QUIZ_CREATE_STEPS.review) {
+      if (loadedStatus === QuizStatus.Published) {
+        void quizCreateStore.saveDraft().then((isSuccess) => {
+          if (isSuccess) {
+            navigate(ROUTES.main, { replace: true });
+          }
+        });
+        return;
+      }
+
       void quizCreateStore.publish().then((isSuccess) => {
         if (isSuccess) {
           navigate(ROUTES.main, { replace: true });
@@ -41,6 +61,13 @@ export const QuizCreatePage = observer(() => {
     quizCreateStore.nextStep();
   };
 
+  const pageTitle = isEditMode
+    ? t(LANG_KEYS.pages.quizCreate.editTitle)
+    : t(LANG_KEYS.pages.quizCreate.title);
+  const pageSubtitle = isEditMode
+    ? t(LANG_KEYS.pages.quizCreate.editSubtitle)
+    : t(LANG_KEYS.pages.quizCreate.subtitle);
+
   const nextLabel =
     activeStep === QUIZ_CREATE_STEPS.basicInfo
       ? t(LANG_KEYS.pages.quizCreate.footer.nextToQuestions)
@@ -48,15 +75,35 @@ export const QuizCreatePage = observer(() => {
         ? t(LANG_KEYS.pages.quizCreate.footer.nextToRules)
         : activeStep === QUIZ_CREATE_STEPS.rules
           ? t(LANG_KEYS.pages.quizCreate.footer.nextToReview)
-          : t(LANG_KEYS.pages.quizCreate.footer.publish);
+          : loadedStatus === QuizStatus.Published
+            ? t(LANG_KEYS.pages.quizCreate.footer.saveChanges)
+            : t(LANG_KEYS.pages.quizCreate.footer.publish);
+
+  if (isEditMode && isLoadingQuiz) {
+    return (
+      <AppLayout title={pageTitle} activeNav="createQuiz">
+        <Center h={320}>
+          <Loader />
+        </Center>
+      </AppLayout>
+    );
+  }
+
+  if (isEditMode && loadError) {
+    return (
+      <AppLayout title={pageTitle} activeNav="createQuiz">
+        <Alert color="red" title={loadError} />
+      </AppLayout>
+    );
+  }
 
   return (
-    <AppLayout title={t(LANG_KEYS.pages.quizCreate.title)} activeNav="createQuiz">
+    <AppLayout title={pageTitle} activeNav="createQuiz">
       <Stack gap="xl">
         <Group justify="space-between" align="flex-start">
           <Stack gap={4}>
-            <Title order={2}>{t(LANG_KEYS.pages.quizCreate.title)}</Title>
-            <Text c="dimmed">{t(LANG_KEYS.pages.quizCreate.subtitle)}</Text>
+            <Title order={2}>{pageTitle}</Title>
+            <Text c="dimmed">{pageSubtitle}</Text>
           </Stack>
           <Button variant="default" onClick={handleSaveDraft}>
             {t(LANG_KEYS.pages.quizCreate.saveDraft)}

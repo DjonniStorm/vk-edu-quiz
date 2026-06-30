@@ -5,11 +5,14 @@ export type { LoginInput, RegisterInput } from "./clients/auth.api";
 export { quizzesApi } from "./clients/quizzes.api";
 export type {
   CreateQuizInput,
+  ListQuizzesQuery,
   QuestionInput,
   QuizDetailsDto,
+  QuizListItemDto,
   QuestionDetailsDto,
   UpdateQuizInput,
 } from "./clients/quizzes.api";
+export { historyApi } from "./clients/history.api";
 export { roomsApi } from "./clients/rooms.api";
 export type {
   AnswerResultDto,
@@ -18,7 +21,12 @@ export type {
   ShowQuestionInput,
   SubmitAnswerInput,
 } from "./clients/rooms.api";
-export type { CurrentQuestionStateDto } from "@quiz/shared";
+export type {
+  CurrentQuestionStateDto,
+  OrganizerHistorySummaryDto,
+  OrganizerRoomHistoryItemDto,
+  RoomResultsDto,
+} from "@quiz/shared";
 export { authTokenStorage, httpClient } from "./http-client";
 export { loaderStore } from "./loader.store";
 export type { LoaderLevel, RequestMeta } from "./loader.store";

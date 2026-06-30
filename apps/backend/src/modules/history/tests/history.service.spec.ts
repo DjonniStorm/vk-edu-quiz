@@ -159,6 +159,30 @@ describe("HistoryServiceImpl", () => {
     ]);
   });
 
+  it("возвращает агрегированную статистику организатора", async () => {
+    const { organizer } = await createFinishedRoom();
+
+    const summary = await createHistoryService().getOrganizerSummary(organizer.id);
+
+    expect(summary).toEqual({
+      completedSessions: 1,
+      totalParticipants: 1,
+      averageScore: 10,
+    });
+  });
+
+  it("возвращает нулевую статистику для организатора без завершенных комнат", async () => {
+    const organizer = await createOrganizer("history-summary-empty");
+
+    const summary = await createHistoryService().getOrganizerSummary(organizer.id);
+
+    expect(summary).toEqual({
+      completedSessions: 0,
+      totalParticipants: 0,
+      averageScore: 0,
+    });
+  });
+
   it("возвращает результаты комнаты только ее организатору", async () => {
     const { organizer, quiz, room, roomParticipant } = await createFinishedRoom();
     const stranger = await createOrganizer("history-stranger");

@@ -1,12 +1,15 @@
 import { makeAutoObservable, runInAction } from "mobx";
 
+import { LANG_KEYS } from "@/app/i18n";
+import i18n from "@/app/i18n";
 import { errorStore } from "@/entities/error";
-import { isCancelError } from "@/shared/api";
+import { historyApi, isCancelError, quizzesApi } from "@/shared/api";
+import type { DashboardQuizDto, DashboardStatDto } from "@/shared/services";
+
 import {
-  organizerDashboardService,
-  type DashboardQuizDto,
-  type DashboardStatDto,
-} from "@/shared/services";
+  buildDashboardStats,
+  mapQuizListItemToCard,
+} from "./organizer-dashboard.mapper";
 
 export class OrganizerDashboardStore {
   stats: DashboardStatDto[] = [];
@@ -21,18 +24,21 @@ export class OrganizerDashboardStore {
     this.isLoading = true;
 
     try {
-      const dashboard = await organizerDashboardService.getDashboard();
+      const [quizzesPage, summary] = await Promise.all([
+        quizzesApi.list({ limit: 20 }),
+        historyApi.getOrganizerSummary(),
+      ]);
 
       runInAction(() => {
-        this.stats = dashboard.stats;
-        this.quizzes = dashboard.quizzes;
+        this.stats = buildDashboardStats(quizzesPage.total, summary);
+        this.quizzes = quizzesPage.items.map(mapQuizListItemToCard);
       });
     } catch (error) {
       if (isCancelError(error)) {
         return;
       }
 
-      errorStore.pushFromUnknown(error, "Не удалось загрузить дашборд");
+      errorStore.pushFromUnknown(error, i18n.t(LANG_KEYS.pages.organizerDashboard.loadFailed));
     } finally {
       runInAction(() => {
         this.isLoading = false;

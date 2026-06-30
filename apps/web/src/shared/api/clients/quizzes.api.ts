@@ -1,4 +1,4 @@
-import type { AnswerMode, QuizStatus } from "@quiz/shared";
+import type { AnswerMode, PaginatedResult, QuizStatus } from "@quiz/shared";
 import type { createQuizSchema, questionInputSchema } from "@quiz/shared";
 import type { z } from "zod";
 
@@ -24,13 +24,18 @@ export interface QuestionDetailsDto {
   answerOptions: AnswerOptionDetailsDto[];
 }
 
-export interface QuizDetailsDto {
+export interface QuizListItemDto {
   id: string;
   title: string;
   description: string | null;
   category: string | null;
   status: QuizStatus;
   questionsCount: number;
+  estimatedDurationMinutes: number;
+  hasRooms: boolean;
+}
+
+export interface QuizDetailsDto extends QuizListItemDto {
   showLeaderboardAfterQuestion: boolean;
   allowLateJoin: boolean;
   questions: QuestionDetailsDto[];
@@ -43,6 +48,11 @@ export interface UpdateQuizInput {
   status?: QuizStatus;
   showLeaderboardAfterQuestion?: boolean;
   allowLateJoin?: boolean;
+}
+
+export interface ListQuizzesQuery {
+  limit?: number;
+  offset?: number;
 }
 
 class QuizzesApi extends BaseApi {
@@ -88,6 +98,23 @@ class QuizzesApi extends BaseApi {
 
   async getQuiz(quizId: string): Promise<QuizDetailsDto> {
     const { data } = await this.get<QuizDetailsDto>(`/${quizId}`, {
+      meta: { level: "blocking" },
+    });
+
+    return data;
+  }
+
+  async duplicate(quizId: string): Promise<QuizDetailsDto> {
+    const { data } = await this.post<QuizDetailsDto>(`/${quizId}/duplicate`, {}, {
+      meta: { level: "blocking" },
+    });
+
+    return data;
+  }
+
+  async list(query: ListQuizzesQuery = {}): Promise<PaginatedResult<QuizListItemDto>> {
+    const { data } = await this.get<PaginatedResult<QuizListItemDto>>("/", {
+      params: query,
       meta: { level: "blocking" },
     });
 

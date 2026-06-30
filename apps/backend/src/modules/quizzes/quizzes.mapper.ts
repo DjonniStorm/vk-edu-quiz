@@ -16,8 +16,9 @@ export interface QuizRecord {
   allowLateJoin: boolean;
   _count?: {
     questions: number;
+    rooms?: number;
   };
-  questions?: QuestionRecord[];
+  questions?: Pick<QuestionRecord, "timeLimitSec">[] | QuestionRecord[];
 }
 
 export interface QuestionRecord {
@@ -39,6 +40,11 @@ export interface AnswerOptionRecord {
 
 export class QuizMapper {
   static toQuizListItem(quiz: QuizRecord): QuizListItem {
+    const totalTimeLimitSec = (quiz.questions ?? []).reduce(
+      (sum, question) => sum + question.timeLimitSec,
+      0,
+    );
+
     return {
       id: quiz.id,
       title: quiz.title,
@@ -46,6 +52,8 @@ export class QuizMapper {
       category: quiz.category,
       status: quiz.status,
       questionsCount: quiz._count?.questions ?? quiz.questions?.length ?? 0,
+      estimatedDurationMinutes: totalTimeLimitSec > 0 ? Math.ceil(totalTimeLimitSec / 60) : 0,
+      hasRooms: (quiz._count?.rooms ?? 0) > 0,
     };
   }
 
@@ -54,7 +62,7 @@ export class QuizMapper {
       ...this.toQuizListItem(quiz),
       showLeaderboardAfterQuestion: quiz.showLeaderboardAfterQuestion,
       allowLateJoin: quiz.allowLateJoin,
-      questions: (quiz.questions ?? []).map((question) => this.toQuestionDetails(question)),
+      questions: (quiz.questions ?? []).map((question) => this.toQuestionDetails(question as QuestionRecord)),
     };
   }
 
