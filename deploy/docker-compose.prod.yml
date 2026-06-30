@@ -1,0 +1,96 @@
+name: quiz-prod
+
+services:
+
+  # ── Database ───────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB:       ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [quiz-net]
+
+  # ── Backend ────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      JWT_SECRET:   ${JWT_SECRET}
+      PORT:         3000
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [quiz-net]
+
+  # ── Frontend (nginx static) ────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: https://${DOMAIN}/api
+        VITE_WS_URL:  wss://${DOMAIN}
+    restart: unless-stopped
+    expose:
+      - "80"
+    networks: [quiz-net]
+
+  # ── Nginx reverse proxy (SSL termination) ──────────────────────────────────
+  # Образ nginx:alpine обрабатывает *.template через envsubst автоматически.
+  # DOMAIN подставляется из .env.prod → proxy.conf генерируется при старте.
+  # Сертификаты должны лежать в certbot_certs до старта (запусти init-ssl.sh).
+  nginx-proxy:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?DOMAIN is required in .env.prod}
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_certs:/etc/letsencrypt:ro
+    depends_on:
+      - frontend
+      - backend
+    networks: [quiz-net]
+
+  # ── Certbot (auto-renew every 12 h) ───────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    restart: unless-stopped
+    volumes:
+      - certbot_www:/var/www/certbot
+      - certbot_certs:/etc/letsencrypt
+    entrypoint: /bin/sh -c
+    command: >
+      "trap exit TERM;
+      while :; do
+        certbot renew --quiet;
+        sleep 12h & wait $${!};
+      done"
+    networks: [quiz-net]
+
+networks:
+  quiz-net:
+    name: quiz-net
+
+volumes:
+  postgres_data:
+  certbot_www:
+  certbot_certs:

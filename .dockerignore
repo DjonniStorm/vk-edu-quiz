@@ -1,0 +1,8 @@
+.git
+**/.git
+**/node_modules
+apps/web/dist
+apps/backend/src/generated
+**/*.log
+.env*
+docker-compose.dev.yml
