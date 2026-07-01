@@ -20,6 +20,7 @@ export interface QuestionViewProps {
   isSubmitting?: boolean;
   submitted?: boolean;
   resultText?: string;
+  isRevealing?: boolean;
   onToggle?: (optionId: string) => void;
   onSubmit?: () => void;
 }
@@ -36,6 +37,7 @@ export const QuestionView = ({
   isSubmitting = false,
   submitted = false,
   resultText,
+  isRevealing = false,
   onToggle,
   onSubmit,
 }: QuestionViewProps) => {
@@ -49,7 +51,13 @@ export const QuestionView = ({
             ? t(LANG_KEYS.pages.room.play.questionProgress, { current, total })
             : t(LANG_KEYS.pages.room.play.questionNumber, { current })}
         </Badge>
-        <RoomTimer endsAt={question.endsAt} />
+        {isRevealing ? (
+          <Badge color="grape" variant="light">
+            {t(LANG_KEYS.pages.room.revealing)}
+          </Badge>
+        ) : (
+          <RoomTimer endsAt={question.endsAt} />
+        )}
       </Group>
 
       <Paper withBorder radius="md" p="xl">

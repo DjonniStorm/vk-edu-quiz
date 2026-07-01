@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { getQuizCategoryLabel } from "@/features/quiz-card/model/quiz-category.ui";
 import { QuizImage } from "@/shared/ui/QuizImage";
 
 import { quizCreateStore } from "../../model/quiz-create.store";
@@ -10,6 +11,7 @@ import { quizCreateStore } from "../../model/quiz-create.store";
 export const ReviewStep = observer(() => {
   const { t } = useTranslation();
   const { draft } = quizCreateStore;
+  const categoryLabel = getQuizCategoryLabel(draft.category);
 
   const boolLabel = (value: boolean) =>
     value ? t(LANG_KEYS.pages.quizCreate.review.enabled) : t(LANG_KEYS.pages.quizCreate.review.disabled);
@@ -23,7 +25,7 @@ export const ReviewStep = observer(() => {
           <Text fw={700}>{t(LANG_KEYS.pages.quizCreate.review.basicInfo)}</Text>
           <Text>{draft.title || "—"}</Text>
           {draft.description ? <Text c="dimmed">{draft.description}</Text> : null}
-          {draft.category ? <Text size="sm">{draft.category}</Text> : null}
+          {categoryLabel ? <Text size="sm">{categoryLabel}</Text> : null}
         </Stack>
       </Paper>
 

@@ -7,6 +7,7 @@ import { useNavigate } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
 import { buildQuizEditPath, buildQuizResultsPath, buildRoomHostPath } from "@/app/routes";
+import { getQuizCategoryLabel } from "@/features/quiz-card/model/quiz-category.ui";
 import { QUIZ_STATUS_COLOR, QUIZ_STATUS_LABEL_KEY } from "@/features/quiz-card/model/quiz-status.ui";
 import { errorStore } from "@/entities/error";
 import { getApiErrorMessage, isCancelError, quizzesApi, roomsApi } from "@/shared/api";
@@ -27,7 +28,7 @@ export const QuizCard = ({ quiz, onArchived }: QuizCardProps) => {
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [isArchiving, setIsArchiving] = useState(false);
   const statusLabel = t(QUIZ_STATUS_LABEL_KEY[quiz.status]);
-  const category = quiz.category?.trim() || EMPTY_VALUE;
+  const category = getQuizCategoryLabel(quiz.category) ?? EMPTY_VALUE;
   const description = quiz.description?.trim() || EMPTY_VALUE;
   const canEdit = !quiz.hasRooms && quiz.status !== QuizStatus.Archived;
   const showDuplicate = quiz.hasRooms;

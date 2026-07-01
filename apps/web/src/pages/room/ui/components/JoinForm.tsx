@@ -1,9 +1,11 @@
-import { Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
+import { Anchor, Button, Paper, Stack, Text, TextInput, Title } from "@mantine/core";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Link, useLocation } from "react-router";
 
 import { LANG_KEYS } from "@/app/i18n";
+import { buildLoginPath } from "@/app/routes";
 import { userStore } from "@/entities/user";
 
 export interface JoinFormProps {
@@ -13,6 +15,7 @@ export interface JoinFormProps {
 
 export const JoinForm = observer(({ isLoading, onJoin }: JoinFormProps) => {
   const { t } = useTranslation();
+  const location = useLocation();
   const currentUser = userStore.currentUser;
   const [displayName, setDisplayName] = useState("");
 
@@ -59,6 +62,19 @@ export const JoinForm = observer(({ isLoading, onJoin }: JoinFormProps) => {
             }
           }}
         />
+
+        {!currentUser && userStore.isInitialized ? (
+          <Text size="xs" c="dimmed">
+            {t(LANG_KEYS.pages.room.play.joinAsGuestHint)}{" "}
+            <Anchor
+              component={Link}
+              to={buildLoginPath(`${location.pathname}${location.search}`)}
+              size="xs"
+            >
+              {t(LANG_KEYS.pages.room.play.joinAsGuestLoginLink)}
+            </Anchor>
+          </Text>
+        ) : null}
 
         <Button loading={isLoading} onClick={() => void handleSubmit()}>
           {t(LANG_KEYS.pages.room.play.join)}
