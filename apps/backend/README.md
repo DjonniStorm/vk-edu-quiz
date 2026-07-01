@@ -1,45 +1,49 @@
 # Backend
 
-Bun + Elysia backend for the VK Education quiz app.
+API и WebSocket-сервер для VK Education Quiz: Bun, Elysia, Prisma, PostgreSQL.
 
-## Development
+## Локальная разработка
 
-Start the local PostgreSQL container from the repository root:
+Из корня репозитория поднимите PostgreSQL:
 
 ```bash
 bun run db:dev:up
 ```
 
-Create `apps/backend/.env` from `apps/backend/.env.example` if it does not exist.
+Создайте `apps/backend/.env` из `apps/backend/.env.example`, если файла ещё нет.
 
-Start the backend:
+Запуск из `apps/backend`:
 
 ```bash
 bun run dev
 ```
 
-Open http://localhost:3000/.
+API: http://localhost:3000/
 
-## API Docs
+## Документация API
 
-Swagger UI is available at:
+Swagger UI: http://localhost:3000/docs
 
-```bash
-http://localhost:3000/docs
-```
-
-OpenAPI JSON is available at:
-
-```bash
-http://localhost:3000/docs/json
-```
+OpenAPI JSON: http://localhost:3000/docs/json
 
 ## Prisma
 
-Run Prisma commands from `apps/backend`:
+Команды выполняются из `apps/backend`:
 
 ```bash
 bun run db:generate
 bun run db:migrate
 bun run db:studio
+```
+
+Для продакшена (миграции без интерактива):
+
+```bash
+bun run db:migrate:deploy
+```
+
+## Тесты
+
+```bash
+bun test
 ```
