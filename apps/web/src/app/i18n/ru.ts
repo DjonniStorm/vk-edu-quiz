@@ -291,6 +291,7 @@ export const ru: Translation = {
         inviteLink: "Ссылка-приглашение",
         roomCode: "Код комнаты",
         copyLink: "Копировать ссылку",
+        scanToJoin: "Отсканируйте, чтобы войти",
         copyRoomCode: "Копировать код",
         linkCopied: "Ссылка скопирована",
         codeCopied: "Код скопирован",

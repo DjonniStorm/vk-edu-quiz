@@ -286,6 +286,7 @@ export const LANG_KEYS = {
         inviteLink: "pages.room.host.inviteLink",
         roomCode: "pages.room.host.roomCode",
         copyLink: "pages.room.host.copyLink",
+        scanToJoin: "pages.room.host.scanToJoin",
         copyRoomCode: "pages.room.host.copyRoomCode",
         linkCopied: "pages.room.host.linkCopied",
         codeCopied: "pages.room.host.codeCopied",
