@@ -5,6 +5,9 @@ import { useTranslation } from "react-i18next";
 import { LANG_KEYS } from "@/app/i18n";
 import { notify } from "@/shared/lib";
 
+import { InviteQrCode } from "./InviteQrCode";
+import { ErrorBoundary } from "@/app/providers/ErrorBoundary";
+
 export interface HostControlsProps {
   isWaiting: boolean;
   isLive: boolean;
@@ -93,14 +96,25 @@ export const HostControls = ({
                 {t(LANG_KEYS.pages.room.host.participantsEmpty)}
               </Text>
             )}
-            <TextInput label={t(LANG_KEYS.pages.room.host.roomCode)} value={roomCode} readOnly />
+            <TextInput
+              label={t(LANG_KEYS.pages.room.host.roomCode)}
+              value={roomCode}
+              readOnly
+            />
             <Button variant="default" onClick={() => void handleCopyRoomCode()}>
               {t(LANG_KEYS.pages.room.host.copyRoomCode)}
             </Button>
-            <TextInput label={t(LANG_KEYS.pages.room.host.inviteLink)} value={inviteUrl} readOnly />
+            <TextInput
+              label={t(LANG_KEYS.pages.room.host.inviteLink)}
+              value={inviteUrl}
+              readOnly
+            />
             <Button variant="default" onClick={() => void handleCopyLink()}>
               {t(LANG_KEYS.pages.room.host.copyLink)}
             </Button>
+            <ErrorBoundary>
+              <InviteQrCode inviteUrl={inviteUrl} />
+            </ErrorBoundary>
             <Button loading={isActionPending} onClick={onStart}>
               {t(LANG_KEYS.pages.room.host.start)}
             </Button>

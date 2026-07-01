@@ -288,6 +288,7 @@ export const en = {
         inviteLink: "Invite link",
         roomCode: "Room code",
         copyLink: "Copy link",
+        scanToJoin: "Scan to join",
         copyRoomCode: "Copy code",
         linkCopied: "Link copied",
         codeCopied: "Code copied",
