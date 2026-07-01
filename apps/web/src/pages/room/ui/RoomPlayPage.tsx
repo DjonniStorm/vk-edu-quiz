@@ -1,6 +1,6 @@
 import { Alert, Badge, Container, Stack } from "@mantine/core";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 
@@ -55,10 +55,40 @@ export const RoomPlayPage = observer(() => {
     isActionPending,
     loadError,
     wsConnected,
+    wsEverConnected,
     displayName,
     quizTitle,
     room,
+    roomParticipantId,
+    leaderboard,
   } = roomStore;
+
+  const confettiFiredRef = useRef(false);
+
+  useEffect(() => {
+    if (phase !== "finished") {
+      confettiFiredRef.current = false;
+      return;
+    }
+
+    if (confettiFiredRef.current || !roomParticipantId) {
+      return;
+    }
+
+    const isTopThree = leaderboard
+      .slice(0, 3)
+      .some((item) => item.roomParticipantId === roomParticipantId);
+
+    if (!isTopThree) {
+      return;
+    }
+
+    confettiFiredRef.current = true;
+
+    void import("canvas-confetti").then(({ default: confetti }) => {
+      confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    });
+  }, [phase, roomParticipantId, leaderboard]);
 
   const pageTitle = quizTitle
     ? t(LANG_KEYS.pages.room.play.titleWithQuiz, { title: quizTitle })
@@ -82,7 +112,7 @@ export const RoomPlayPage = observer(() => {
       <Stack gap="lg">
         {loadError ? <Alert color="red">{loadError}</Alert> : null}
 
-        {!wsConnected && phase !== "join" && !loadError ? (
+        {!wsConnected && wsEverConnected && phase !== "join" && !loadError ? (
           <Badge color="yellow" variant="light">
             {t(LANG_KEYS.pages.room.reconnecting)}
           </Badge>
@@ -114,7 +144,11 @@ export const RoomPlayPage = observer(() => {
         ) : null}
 
         {phase === "finished" ? (
-          <FinishedScreen titleKey="play" leaderboard={roomStore.leaderboard} />
+          <FinishedScreen
+            titleKey="play"
+            leaderboard={roomStore.leaderboard}
+            highlightParticipantId={roomParticipantId}
+          />
         ) : null}
       </Stack>
     </Container>

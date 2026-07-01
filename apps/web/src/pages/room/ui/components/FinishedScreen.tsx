@@ -11,9 +11,10 @@ import { LeaderboardList } from "./LeaderboardList";
 export interface FinishedScreenProps {
   titleKey: "play" | "host";
   leaderboard: LeaderboardItemDto[];
+  highlightParticipantId?: string | null;
 }
 
-export const FinishedScreen = ({ titleKey, leaderboard }: FinishedScreenProps) => {
+export const FinishedScreen = ({ titleKey, leaderboard, highlightParticipantId }: FinishedScreenProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isParticipant = titleKey === "play";
@@ -29,7 +30,7 @@ export const FinishedScreen = ({ titleKey, leaderboard }: FinishedScreenProps) =
         {t(LANG_KEYS.rooms.leaderboard)}
       </Text>
       <ScrollArea.Autosize mah={420} type="auto" offsetScrollbars>
-        <LeaderboardList items={leaderboard} />
+        <LeaderboardList items={leaderboard} highlightParticipantId={highlightParticipantId} />
       </ScrollArea.Autosize>
       {isParticipant ? (
         <Button variant="light" onClick={() => navigate(ROUTES.main, { replace: true })}>

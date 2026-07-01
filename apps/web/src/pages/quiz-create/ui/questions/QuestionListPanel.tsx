@@ -1,4 +1,4 @@
-import { ActionIcon, Box, Group, Paper, Stack, Text, UnstyledButton } from "@mantine/core";
+import { ActionIcon, Box, Group, Paper, ScrollArea, Stack, Text, UnstyledButton } from "@mantine/core";
 import { IconPlus, IconTrash } from "@tabler/icons-react";
 import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
@@ -79,16 +79,18 @@ export const QuestionListPanel = observer(({ onAddQuestion }: QuestionListPanelP
         </ActionIcon>
       </Group>
 
-      <Stack gap="xs" style={{ flex: 1, overflowY: "auto" }}>
-        {draft.questions.map((question, index) => (
-          <QuestionListItem
-            key={question.clientId}
-            question={question}
-            index={index}
-            isActive={question.clientId === selectedQuestionClientId}
-          />
-        ))}
-      </Stack>
+      <ScrollArea style={{ flex: 1 }} type="auto" scrollbarSize={8} offsetScrollbars>
+        <Stack gap="xs" p={2}>
+          {draft.questions.map((question, index) => (
+            <QuestionListItem
+              key={question.clientId}
+              question={question}
+              index={index}
+              isActive={question.clientId === selectedQuestionClientId}
+            />
+          ))}
+        </Stack>
+      </ScrollArea>
 
       <UnstyledButton
         onClick={onAddQuestion}

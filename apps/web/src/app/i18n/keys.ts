@@ -220,6 +220,8 @@ export const LANG_KEYS = {
         finishFailed: "pages.room.errors.finishFailed",
       },
       reconnecting: "pages.room.reconnecting",
+      authFailed: "pages.room.authFailed",
+      authFailedDescription: "pages.room.authFailedDescription",
       play: {
         metaTitle: "pages.room.play.metaTitle",
         titleWithQuiz: "pages.room.play.titleWithQuiz",
@@ -318,6 +320,7 @@ export const LANG_KEYS = {
       edit: "quizzes.actions.edit",
       duplicate: "quizzes.actions.duplicate",
       results: "quizzes.actions.results",
+      archive: "quizzes.actions.archive",
     },
     notifications: {
       duplicated: "quizzes.notifications.duplicated",
@@ -333,6 +336,7 @@ export const LANG_KEYS = {
     start: "rooms.start",
     finish: "rooms.finish",
     leaderboard: "rooms.leaderboard",
+    you: "rooms.you",
   },
 } as const;
 

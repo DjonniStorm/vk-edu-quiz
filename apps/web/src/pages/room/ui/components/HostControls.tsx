@@ -17,6 +17,7 @@ export interface HostControlsProps {
   roomCode: string;
   isActionPending: boolean;
   isQuestionClosing: boolean;
+  wsConnected: boolean;
   onStart: () => void;
   onNext: () => void;
   onFinish: () => void;
@@ -36,6 +37,7 @@ export const HostControls = ({
   roomCode,
   isActionPending,
   isQuestionClosing,
+  wsConnected,
   onStart,
   onNext,
   onFinish,
@@ -121,7 +123,7 @@ export const HostControls = ({
             <Group grow>
               <Button
                 loading={isActionPending}
-                disabled={!hasQuestion || isQuestionClosing}
+                disabled={!hasQuestion || isQuestionClosing || !wsConnected}
                 onClick={onNext}
               >
                 {t(LANG_KEYS.pages.room.host.next)}

@@ -81,7 +81,11 @@ export const OrganizerDashboardPage = observer(() => {
                 }}
               >
                 {organizerDashboardStore.quizzes.map((quiz) => (
-                  <QuizCard key={quiz.id} quiz={quiz} />
+                  <QuizCard
+                    key={quiz.id}
+                    quiz={quiz}
+                    onArchived={() => organizerDashboardStore.loadQuizzes()}
+                  />
                 ))}
               </SimpleGrid>
             </Box>

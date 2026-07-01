@@ -221,6 +221,8 @@ export const en = {
         finishFailed: "Failed to finish quiz",
       },
       reconnecting: "Reconnecting…",
+      authFailed: "Session expired",
+      authFailedDescription: "Your session has expired. Please refresh the page to reconnect.",
       play: {
         metaTitle: "Quiz participation",
         titleWithQuiz: "{{title}} — participation",
@@ -319,6 +321,7 @@ export const en = {
       edit: "Edit",
       duplicate: "Duplicate",
       results: "Results",
+      archive: "Archive",
     },
     notifications: {
       duplicated: "Quiz duplicated",
@@ -334,6 +337,7 @@ export const en = {
     start: "Start",
     finish: "Finish",
     leaderboard: "Leaderboard",
+    you: "You",
   },
 } as const;
 

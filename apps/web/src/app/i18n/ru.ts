@@ -224,6 +224,8 @@ export const ru: Translation = {
         finishFailed: "Не удалось завершить квиз",
       },
       reconnecting: "Переподключение…",
+      authFailed: "Сессия истекла",
+      authFailedDescription: "Ваша сессия истекла. Обновите страницу, чтобы переподключиться.",
       play: {
         metaTitle: "Участие в квизе",
         titleWithQuiz: "{{title}} — участие",
@@ -322,6 +324,7 @@ export const ru: Translation = {
       edit: "Редактировать",
       duplicate: "Дублировать",
       results: "Результаты",
+      archive: "В архив",
     },
     notifications: {
       duplicated: "Квиз продублирован",
@@ -337,5 +340,6 @@ export const ru: Translation = {
     start: "Запустить",
     finish: "Завершить",
     leaderboard: "Лидерборд",
+    you: "Вы",
   },
 };

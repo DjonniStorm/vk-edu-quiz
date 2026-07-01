@@ -33,23 +33,51 @@ interface PendingAuth {
   timeoutId: ReturnType<typeof setTimeout>;
 }
 
+// Elysia recreates a new wrapper object for `ws` on every open/message/close
+// call (https://github.com/elysiajs/elysia/issues/1716, unfixed as of 1.4.29),
+// so a WeakMap keyed by `ws` cannot correlate state across hooks - lookups in
+// `message`/`close` always miss what was stored in `open`. The underlying
+// `ws.data` object is the actual per-connection storage Bun keeps alive for
+// the socket's lifetime, so we stash our own mutable state there instead.
+interface ConnectionState {
+  connectionId?: string;
+  pendingAuth?: PendingAuth;
+}
+
+const getConnectionState = (ws: { data: unknown }): ConnectionState =>
+  ws.data as unknown as ConnectionState;
+
+// Elysia's default WS message parser already runs `JSON.parse` on incoming
+// text frames that look like JSON (leading `{`, `[`, `"`, etc.) before our
+// `message` handler ever sees them, so `rawMessage` here is typically already
+// a plain object - not a string. Re-stringifying + re-parsing it (the old
+// `JSON.parse(String(rawMessage))` pattern) breaks because `String(object)`
+// yields `"[object Object]"`, which isn't valid JSON.
+const normalizeIncomingMessage = (rawMessage: unknown): unknown => {
+  if (typeof rawMessage !== "string") {
+    return rawMessage;
+  }
+
+  try {
+    return JSON.parse(rawMessage);
+  } catch {
+    return rawMessage;
+  }
+};
+
 export const createRealtimeRoutes = ({
   realtimeGateway,
   authContextProvider,
   prisma,
 }: RealtimeRoutesDeps) => {
-  const connectionIds = new WeakMap<object, string>();
-  const pendingAuth = new WeakMap<object, PendingAuth>();
-
   const registerConnection = (
-    ws: { send: (payload: string) => void; close: (code?: number, reason?: string) => void },
-    wsRef: object,
+    ws: { data: unknown; send: (payload: string) => void; close: (code?: number, reason?: string) => void },
     roomId: string,
     roomParticipantId: string | undefined,
     isOrganizer: boolean,
   ) => {
     const connectionId = crypto.randomUUID();
-    connectionIds.set(wsRef, connectionId);
+    getConnectionState(ws).connectionId = connectionId;
 
     realtimeGateway.registerConnection(
       { id: connectionId, roomId, roomParticipantId, isOrganizer },
@@ -58,6 +86,12 @@ export const createRealtimeRoutes = ({
         close: (code, reason) => ws.close(code, reason),
       },
     );
+
+    // explicit ack so the client only flips its "connected" UI state once the
+    // connection is actually registered with the gateway, not just once the
+    // raw socket handshake completed (organizer auth happens asynchronously
+    // after open, so the socket can be "open" for a while before this fires)
+    ws.send(JSON.stringify({ type: "connected" }));
   };
 
   return new Elysia({ prefix: "/realtime" })
@@ -92,68 +126,86 @@ export const createRealtimeRoutes = ({
 
         if (query.data.role === "organizer") {
           const timeoutId = setTimeout(() => {
-            pendingAuth.delete(ws);
-            ws.close(4401, "Auth timeout");
+            const state = getConnectionState(ws);
+
+            if (state.pendingAuth) {
+              state.pendingAuth = undefined;
+              ws.close(4401, "Auth timeout");
+            }
           }, AUTH_TIMEOUT_MS);
 
-          pendingAuth.set(ws, { roomId, timeoutId });
+          getConnectionState(ws).pendingAuth = { roomId, timeoutId };
 
           return;
         }
 
-        registerConnection(ws, ws, roomId, query.data.roomParticipantId, false);
+        registerConnection(ws, roomId, query.data.roomParticipantId, false);
       },
 
       message: async (ws, rawMessage) => {
-        const pending = pendingAuth.get(ws);
+        const state = getConnectionState(ws);
+        const pending = state.pendingAuth;
 
         if (!pending) {
           return;
         }
 
         clearTimeout(pending.timeoutId);
-        pendingAuth.delete(ws);
+        state.pendingAuth = undefined;
 
         let parsed: z.infer<typeof wsOrganizerAuthSchema>;
 
         try {
-          parsed = wsOrganizerAuthSchema.parse(JSON.parse(String(rawMessage)));
-        } catch {
+          parsed = wsOrganizerAuthSchema.parse(normalizeIncomingMessage(rawMessage));
+        } catch (error) {
+          console.warn("[realtime] organizer WS auth message invalid", error);
           ws.close(4401, "Invalid auth message");
 
           return;
         }
 
-        const [currentUser, room] = await Promise.all([
-          authContextProvider.getCurrentUser(`Bearer ${parsed.token}`),
-          prisma.room.findUnique({
-            where: { id: pending.roomId },
-            select: { organizerId: true },
-          }),
-        ]);
+        try {
+          const [currentUser, room] = await Promise.all([
+            authContextProvider.getCurrentUser(`Bearer ${parsed.token}`),
+            prisma.room.findUnique({
+              where: { id: pending.roomId },
+              select: { organizerId: true },
+            }),
+          ]);
 
-        if (!currentUser || !room || room.organizerId !== currentUser.id) {
+          if (!currentUser || !room || room.organizerId !== currentUser.id) {
+            console.warn("[realtime] organizer WS auth rejected", {
+              roomId: pending.roomId,
+              hasCurrentUser: !!currentUser,
+              currentUserId: currentUser?.id,
+              hasRoom: !!room,
+              roomOrganizerId: room?.organizerId,
+            });
+            ws.close(4401, "Unauthorized organizer connection");
+
+            return;
+          }
+
+          registerConnection(ws, pending.roomId, undefined, true);
+        } catch (error) {
+          // any auth/db failure should still terminate the handshake explicitly
+          // instead of leaving the socket open and unregistered forever
+          console.error("[realtime] organizer WS auth threw", error);
           ws.close(4401, "Unauthorized organizer connection");
-
-          return;
         }
-
-        registerConnection(ws, ws, pending.roomId, undefined, true);
       },
 
       close(ws) {
-        const pending = pendingAuth.get(ws);
+        const state = getConnectionState(ws);
 
-        if (pending) {
-          clearTimeout(pending.timeoutId);
-          pendingAuth.delete(ws);
+        if (state.pendingAuth) {
+          clearTimeout(state.pendingAuth.timeoutId);
+          state.pendingAuth = undefined;
         }
 
-        const connectionId = connectionIds.get(ws);
-
-        if (connectionId) {
-          realtimeGateway.unregisterConnection(connectionId);
-          connectionIds.delete(ws);
+        if (state.connectionId) {
+          realtimeGateway.unregisterConnection(state.connectionId);
+          state.connectionId = undefined;
         }
       },
     });

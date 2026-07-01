@@ -41,6 +41,8 @@ export class RoomStore {
   revealedCorrectOptionIds: string[] | null = null;
   isQuestionClosing = false;
   wsConnected = false;
+  wsEverConnected = false;
+  wsAuthFailed = false;
   isLoading = false;
   loadError: string | null = null;
   isActionPending = false;
@@ -243,6 +245,8 @@ export class RoomStore {
     this.revealedCorrectOptionIds = null;
     this.isQuestionClosing = false;
     this.wsConnected = false;
+    this.wsEverConnected = false;
+    this.wsAuthFailed = false;
     this.isLoading = false;
     this.loadError = null;
     this.isActionPending = false;
@@ -397,7 +401,13 @@ export class RoomStore {
   }
 
   async nextQuestion(): Promise<void> {
-    if (!this.roomId || !this.currentQuestion || this.isActionPending || this.isQuestionClosing) {
+    if (
+      !this.roomId ||
+      !this.currentQuestion ||
+      this.isActionPending ||
+      this.isQuestionClosing ||
+      !this.wsConnected
+    ) {
       return;
     }
 
@@ -477,14 +487,61 @@ export class RoomStore {
     }
 
     this.realtimeRole = role;
+    this.wsAuthFailed = false;
 
     roomRealtimeClient.onEvent((event) => {
       this.handleRealtimeEvent(event);
     });
 
     roomRealtimeClient.onConnectionChange((isConnected) => {
+      // проверяем ДО обновления wsEverConnected — только реальный reconnect
+      const isReconnect =
+        isConnected && this.wsEverConnected && this.realtimeRole === SessionRole.Organizer;
+
       runInAction(() => {
         this.wsConnected = isConnected;
+
+        if (isConnected) {
+          this.wsEverConnected = true;
+        }
+      });
+
+      if (isReconnect && this.roomId) {
+        const roomId = this.roomId;
+
+        void roomsApi
+          .getRoom(roomId)
+          .then((room) => {
+            if (!room) return;
+
+            runInAction(() => {
+              this.room = room;
+            });
+
+            if (room.status === RoomStatus.Active) {
+              void this.syncHostState();
+            }
+          })
+          .catch(() => {
+            // ignore
+          });
+
+        void roomsApi
+          .getLeaderboard(roomId)
+          .then((leaderboard) => {
+            runInAction(() => {
+              this.leaderboard = leaderboard;
+            });
+          })
+          .catch(() => {
+            // ignore
+          });
+      }
+    });
+
+    roomRealtimeClient.onAuthFailure(() => {
+      runInAction(() => {
+        this.wsAuthFailed = true;
       });
     });
 

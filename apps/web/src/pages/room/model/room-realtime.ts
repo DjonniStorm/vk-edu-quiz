@@ -50,6 +50,7 @@ export class RoomRealtimeClient {
   private socket: WebSocket | null = null;
   private handler: EventHandler | null = null;
   private connectionHandler: ConnectionHandler | null = null;
+  private authFailureHandler: (() => void) | null = null;
   private roomId: string | null = null;
   private role: SessionRole | null = null;
   private roomParticipantId: string | null = null;
@@ -62,6 +63,10 @@ export class RoomRealtimeClient {
 
   onConnectionChange(handler: ConnectionHandler): void {
     this.connectionHandler = handler;
+  }
+
+  onAuthFailure(handler: () => void): void {
+    this.authFailureHandler = handler;
   }
 
   connectOrganizer(roomId: string): void {
@@ -92,6 +97,7 @@ export class RoomRealtimeClient {
     this.roomParticipantId = null;
     this.handler = null;
     this.connectionHandler = null;
+    this.authFailureHandler = null;
   }
 
   get isConnected(): boolean {
@@ -130,15 +136,24 @@ export class RoomRealtimeClient {
         socket.send(JSON.stringify({ type: "auth", token: accessToken }));
       }
 
-      this.connectionHandler?.(true);
+      // `wsConnected` flips to true only once the server acks with
+      // {type:"connected"} - for organizers that happens after auth
+      // resolves, so a raw socket handshake alone must not count as
+      // "connected" (otherwise the UI looks live for up to 5s before the
+      // auth result is actually known).
     };
 
     socket.onmessage = (message) => {
       try {
-        const event = JSON.parse(String(message.data)) as RoomRealtimeEvent;
+        const event = JSON.parse(String(message.data)) as { type?: string };
 
-        if ("type" in event && event.type) {
-          this.handler?.(event);
+        if (event?.type === "connected") {
+          this.connectionHandler?.(true);
+          return;
+        }
+
+        if (event && "type" in event && event.type) {
+          this.handler?.(event as RoomRealtimeEvent);
         }
       } catch {
         // ignore malformed payloads
@@ -151,7 +166,12 @@ export class RoomRealtimeClient {
 
       const isAuthFailure = event.code === 4401;
 
-      if (!this.disposed && !isAuthFailure && this.roomId && this.role) {
+      if (isAuthFailure) {
+        this.authFailureHandler?.();
+        return;
+      }
+
+      if (!this.disposed && this.roomId && this.role) {
         this.scheduleReconnect();
       }
     };

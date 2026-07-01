@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Badge, Button, Card, Group, Stack, Text, Title } from "@mantine/core";
+import { modals } from "@mantine/modals";
 import { QuizStatus } from "@quiz/shared";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -14,15 +15,17 @@ import type { DashboardQuizDto } from "@/shared/services";
 
 export interface QuizCardProps {
   quiz: DashboardQuizDto;
+  onArchived?: () => void;
 }
 
 const EMPTY_VALUE = "—";
 
-export const QuizCard = ({ quiz }: QuizCardProps) => {
+export const QuizCard = ({ quiz, onArchived }: QuizCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
+  const [isArchiving, setIsArchiving] = useState(false);
   const statusLabel = t(QUIZ_STATUS_LABEL_KEY[quiz.status]);
   const category = quiz.category?.trim() || EMPTY_VALUE;
   const description = quiz.description?.trim() || EMPTY_VALUE;
@@ -45,6 +48,41 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
     } finally {
       setIsCreatingRoom(false);
     }
+  };
+
+  const handleArchive = () => {
+    modals.openConfirmModal({
+      title: t(LANG_KEYS.pages.quizCreate.archiveConfirmTitle),
+      children: (
+        <Text size="sm" c="dimmed">
+          {t(LANG_KEYS.pages.quizCreate.archiveConfirmBody)}
+        </Text>
+      ),
+      labels: {
+        confirm: t(LANG_KEYS.quizzes.actions.archive),
+        cancel: t(LANG_KEYS.common.cancel),
+      },
+      confirmProps: { color: "red" },
+      onConfirm: async () => {
+        setIsArchiving(true);
+
+        try {
+          await quizzesApi.update(quiz.id, { status: QuizStatus.Archived });
+          notify.success(t(LANG_KEYS.pages.quizCreate.notifications.archived));
+          onArchived?.();
+        } catch (error) {
+          if (isCancelError(error)) {
+            return;
+          }
+
+          errorStore.push(
+            getApiErrorMessage(error, t(LANG_KEYS.pages.quizCreate.notifications.archiveFailed)),
+          );
+        } finally {
+          setIsArchiving(false);
+        }
+      },
+    });
   };
 
   const duplicateQuiz = async () => {
@@ -105,6 +143,16 @@ export const QuizCard = ({ quiz }: QuizCardProps) => {
         {!canEdit && !showDuplicate && quiz.status === QuizStatus.Archived ? (
           <Button variant="default" disabled>
             {t(LANG_KEYS.quizzes.actions.edit)}
+          </Button>
+        ) : null}
+        {quiz.status === QuizStatus.Published ? (
+          <Button
+            variant="subtle"
+            color="red"
+            loading={isArchiving}
+            onClick={() => handleArchive()}
+          >
+            {t(LANG_KEYS.quizzes.actions.archive)}
           </Button>
         ) : null}
         {showResults ? (

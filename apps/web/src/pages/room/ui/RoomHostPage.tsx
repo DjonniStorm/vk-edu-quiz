@@ -67,6 +67,8 @@ export const RoomHostPage = observer(() => {
     isFinished,
     loadError,
     wsConnected,
+    wsEverConnected,
+    wsAuthFailed,
     hostParticipants,
   } = roomStore;
 
@@ -88,7 +90,17 @@ export const RoomHostPage = observer(() => {
         <Stack gap="lg">
           {loadError ? <Alert color="red">{loadError}</Alert> : null}
 
-          {!wsConnected && !loadError ? (
+          {wsAuthFailed ? (
+            <Alert
+              color="red"
+              title={t(LANG_KEYS.pages.room.authFailed)}
+              withCloseButton={false}
+            >
+              {t(LANG_KEYS.pages.room.authFailedDescription)}
+            </Alert>
+          ) : null}
+
+          {!wsConnected && wsEverConnected && !wsAuthFailed && !loadError ? (
             <Badge color="yellow" variant="light">
               {t(LANG_KEYS.pages.room.reconnecting)}
             </Badge>
@@ -157,6 +169,7 @@ export const RoomHostPage = observer(() => {
                       roomCode={room?.code ?? ""}
                       isActionPending={isActionPending}
                       isQuestionClosing={isQuestionClosing}
+                      wsConnected={wsConnected}
                       onStart={() => void roomStore.start()}
                       onNext={() => void roomStore.nextQuestion()}
                       onFinish={() => void roomStore.finish()}
