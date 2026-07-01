@@ -26,12 +26,42 @@ export const en = {
       password: "Password",
       name: "Alex O.",
     },
+    errors: {
+      invalidCredentials: "Incorrect email or password",
+      emailTaken: "An account with this email already exists",
+      loginFailed: "Failed to log in. Please try again",
+      registerFailed: "Failed to create account. Please try again",
+    },
+  },
+  validation: {
+    required: "This field is required",
+    invalidEmail: "Enter a valid email",
+    tooShort: "This value is too short",
+    invalid: "Invalid value",
   },
   roles: {
     user: "User",
     admin: "Admin",
   },
   pages: {
+    landing: {
+      metaDescription: "Create quizzes, run live sessions, and track results in one place.",
+      title: "Live quizzes with automatic scoring and a leaderboard",
+      subtitle:
+        "Create a quiz, invite participants with a link or room code, and watch the leaderboard update in real time.",
+      login: "Log in",
+      register: "Create account",
+      features: {
+        scoring: "Automatic answer scoring",
+        leaderboard: "Live leaderboard during the session",
+        history: "Personal cabinet with participation history",
+      },
+      contacts: {
+        title: "Contacts",
+        github: "GitHub",
+        telegram: "Telegram",
+      },
+    },
     login: {
       title: "Log in",
       subtitle: "Use your account to open the organizer dashboard.",
@@ -223,6 +253,7 @@ export const en = {
       reconnecting: "Reconnecting…",
       authFailed: "Session expired",
       authFailedDescription: "Your session has expired. Please refresh the page to reconnect.",
+      revealing: "Revealing correct answers…",
       play: {
         metaTitle: "Quiz participation",
         titleWithQuiz: "{{title}} — participation",
@@ -232,6 +263,8 @@ export const en = {
         displayNamePlaceholder: "Your name",
         join: "Join",
         joinAsAccount: "Join as {{name}} · {{email}}",
+        joinAsGuestHint: "Playing as a guest — your result won't be saved to a personal cabinet.",
+        joinAsGuestLoginLink: "Log in to save it",
         waitingTitle: "Waiting to start",
         waitingSubtitle: "The organizer will start the quiz soon",
         roomCode: "Room code",
@@ -330,6 +363,20 @@ export const en = {
     meta: {
       questions: "{{count}} questions",
       minutes: "{{count}} min",
+    },
+    categories: {
+      history: "History",
+      math: "Math",
+      geography: "Geography",
+      literature: "Literature",
+      biology: "Biology",
+      physics: "Physics",
+      chemistry: "Chemistry",
+      art: "Art",
+      music: "Music",
+      sport: "Sport",
+      it: "IT & Technology",
+      generalKnowledge: "General Knowledge",
     },
   },
   rooms: {

@@ -3,7 +3,8 @@ import { observer } from "mobx-react-lite";
 import { useTranslation } from "react-i18next";
 
 import { LANG_KEYS } from "@/app/i18n";
-import { QUIZ_CATEGORIES } from "@/shared/config/quiz-categories";
+import { QUIZ_CATEGORY_LABEL_KEY } from "@/features/quiz-card/model/quiz-category.ui";
+import { QUIZ_CATEGORY_IDS } from "@/shared/config/quiz-categories";
 
 import { quizCreateStore } from "../../model/quiz-create.store";
 
@@ -40,7 +41,7 @@ export const BasicInfoStep = observer(() => {
       <Autocomplete
         label={t(LANG_KEYS.pages.quizCreate.basicInfo.category)}
         placeholder={t(LANG_KEYS.pages.quizCreate.basicInfo.categoryPlaceholder)}
-        data={[...QUIZ_CATEGORIES]}
+        data={QUIZ_CATEGORY_IDS.map((id) => t(QUIZ_CATEGORY_LABEL_KEY[id]))}
         value={draft.category}
         onChange={(value) =>
           quizCreateStore.updateBasicInfo({

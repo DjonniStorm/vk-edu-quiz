@@ -1,14 +1,16 @@
-export const QUIZ_CATEGORIES = [
-  "История",
-  "Математика",
-  "География",
-  "Литература",
-  "Биология",
-  "Физика",
-  "Химия",
-  "Искусство",
-  "Музыка",
-  "Спорт",
-  "IT и технологии",
-  "Общие знания",
+export const QUIZ_CATEGORY_IDS = [
+  "history",
+  "math",
+  "geography",
+  "literature",
+  "biology",
+  "physics",
+  "chemistry",
+  "art",
+  "music",
+  "sport",
+  "it",
+  "generalKnowledge",
 ] as const;
+
+export type QuizCategoryId = (typeof QUIZ_CATEGORY_IDS)[number];

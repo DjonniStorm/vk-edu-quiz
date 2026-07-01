@@ -26,12 +26,41 @@ export const LANG_KEYS = {
       password: "auth.placeholders.password",
       name: "auth.placeholders.name",
     },
+    errors: {
+      invalidCredentials: "auth.errors.invalidCredentials",
+      emailTaken: "auth.errors.emailTaken",
+      loginFailed: "auth.errors.loginFailed",
+      registerFailed: "auth.errors.registerFailed",
+    },
+  },
+  validation: {
+    required: "validation.required",
+    invalidEmail: "validation.invalidEmail",
+    tooShort: "validation.tooShort",
+    invalid: "validation.invalid",
   },
   roles: {
     user: "roles.user",
     admin: "roles.admin",
   },
   pages: {
+    landing: {
+      metaDescription: "pages.landing.metaDescription",
+      title: "pages.landing.title",
+      subtitle: "pages.landing.subtitle",
+      login: "pages.landing.login",
+      register: "pages.landing.register",
+      features: {
+        scoring: "pages.landing.features.scoring",
+        leaderboard: "pages.landing.features.leaderboard",
+        history: "pages.landing.features.history",
+      },
+      contacts: {
+        title: "pages.landing.contacts.title",
+        github: "pages.landing.contacts.github",
+        telegram: "pages.landing.contacts.telegram",
+      },
+    },
     login: {
       title: "pages.login.title",
       subtitle: "pages.login.subtitle",
@@ -222,6 +251,7 @@ export const LANG_KEYS = {
       reconnecting: "pages.room.reconnecting",
       authFailed: "pages.room.authFailed",
       authFailedDescription: "pages.room.authFailedDescription",
+      revealing: "pages.room.revealing",
       play: {
         metaTitle: "pages.room.play.metaTitle",
         titleWithQuiz: "pages.room.play.titleWithQuiz",
@@ -231,6 +261,8 @@ export const LANG_KEYS = {
         displayNamePlaceholder: "pages.room.play.displayNamePlaceholder",
         join: "pages.room.play.join",
         joinAsAccount: "pages.room.play.joinAsAccount",
+        joinAsGuestHint: "pages.room.play.joinAsGuestHint",
+        joinAsGuestLoginLink: "pages.room.play.joinAsGuestLoginLink",
         waitingTitle: "pages.room.play.waitingTitle",
         waitingSubtitle: "pages.room.play.waitingSubtitle",
         roomCode: "pages.room.play.roomCode",
@@ -329,6 +361,20 @@ export const LANG_KEYS = {
     meta: {
       questions: "quizzes.meta.questions",
       minutes: "quizzes.meta.minutes",
+    },
+    categories: {
+      history: "quizzes.categories.history",
+      math: "quizzes.categories.math",
+      geography: "quizzes.categories.geography",
+      literature: "quizzes.categories.literature",
+      biology: "quizzes.categories.biology",
+      physics: "quizzes.categories.physics",
+      chemistry: "quizzes.categories.chemistry",
+      art: "quizzes.categories.art",
+      music: "quizzes.categories.music",
+      sport: "quizzes.categories.sport",
+      it: "quizzes.categories.it",
+      generalKnowledge: "quizzes.categories.generalKnowledge",
     },
   },
   rooms: {
