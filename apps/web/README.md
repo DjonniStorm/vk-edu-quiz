@@ -1,32 +1,35 @@
-# React + TypeScript + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Клиентская часть VK Education Quiz: React, Vite, Mantine, MobX, i18n (ru/en).
 
-Currently, two official plugins are available:
+## Локальная разработка
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Из корня репозитория (нужен запущенный backend):
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+bun run dev:web
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Приложение: http://localhost:5173/
+
+Переменные `VITE_API_URL` и `VITE_WS_URL` — опционально (по умолчанию `http://localhost:3000` и ws на том же хосте). См. `src/shared/config/env.ts`.
+
+## Сборка
+
+Из `apps/web`:
+
+```bash
+bun run build
+```
+
+Статика попадает в `dist/`. Локальный просмотр сборки:
+
+```bash
+bun run preview
+```
+
+## Линтер
+
+```bash
+bun run lint
+```
