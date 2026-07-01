@@ -294,7 +294,7 @@ export const en = {
         start: "Start quiz",
         next: "Next question",
         finish: "Finish early",
-        answered: "{{answered}} / {{joined}} answered",
+        answered: "{{answered}} / {{active}} answered",
         closingQuestion: "Revealing correct answers…",
         participantsTitle: "Participants ({{count}})",
         participantsEmpty: "No one has joined yet",
