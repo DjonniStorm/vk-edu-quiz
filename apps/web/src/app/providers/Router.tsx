@@ -1,8 +1,10 @@
-import { lazy } from "react";
+import { observer } from "mobx-react-lite";
+import { lazy, useEffect } from "react";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router";
 import { ROUTES } from "../routes";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { LazyPage } from "./LazyPage";
+import { userStore } from "@/entities/user";
 import { ProtectedRoute } from "@/features/protected-route";
 import { NotFoundPage } from "@/pages/error";
 import { loaderStore } from "@/shared/api";
@@ -14,6 +16,26 @@ const OrganizerDashboardPage = lazy(async () => {
   return {
     default: module.OrganizerDashboardPage,
   };
+});
+
+const LandingPage = lazy(async () => {
+  const module = await import("@/pages/landing");
+
+  return {
+    default: module.LandingPage,
+  };
+});
+
+const HomeRoute = observer(() => {
+  useEffect(() => {
+    void userStore.initialize();
+  }, []);
+
+  if (!userStore.isInitialized || userStore.isInitializing) {
+    return null;
+  }
+
+  return userStore.isAuthenticated ? <OrganizerDashboardPage /> : <LandingPage />;
 });
 
 const LoginPage = lazy(async () => {
@@ -86,9 +108,7 @@ const router = createBrowserRouter([
         path: ROUTES.main,
         element: (
           <LazyPage>
-            <ProtectedRoute>
-              <OrganizerDashboardPage />
-            </ProtectedRoute>
+            <HomeRoute />
           </LazyPage>
         ),
       },

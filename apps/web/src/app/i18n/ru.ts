@@ -28,12 +28,42 @@ export const ru: Translation = {
       password: "Пароль",
       name: "Алекс О.",
     },
+    errors: {
+      invalidCredentials: "Неверный email или пароль",
+      emailTaken: "Аккаунт с таким email уже существует",
+      loginFailed: "Не удалось войти. Попробуйте ещё раз",
+      registerFailed: "Не удалось зарегистрироваться. Попробуйте ещё раз",
+    },
+  },
+  validation: {
+    required: "Обязательное поле",
+    invalidEmail: "Введите корректный email",
+    tooShort: "Слишком короткое значение",
+    invalid: "Некорректное значение",
   },
   roles: {
     user: "Пользователь",
     admin: "Администратор",
   },
   pages: {
+    landing: {
+      metaDescription: "Создавайте квизы, проводите живые сессии и следите за результатами в одном месте.",
+      title: "Живые квизы с автоподсчётом баллов и лидербордом",
+      subtitle:
+        "Создайте квиз, пригласите участников по ссылке или коду комнаты и наблюдайте за лидербордом в реальном времени.",
+      login: "Войти",
+      register: "Зарегистрироваться",
+      features: {
+        scoring: "Автоматический подсчёт баллов за ответы",
+        leaderboard: "Лидерборд в реальном времени во время сессии",
+        history: "Личный кабинет с историей прохождений",
+      },
+      contacts: {
+        title: "Контакты",
+        github: "GitHub",
+        telegram: "Telegram",
+      },
+    },
     login: {
       title: "Вход",
       subtitle: "Войдите в аккаунт, чтобы открыть панель организатора.",
@@ -226,6 +256,7 @@ export const ru: Translation = {
       reconnecting: "Переподключение…",
       authFailed: "Сессия истекла",
       authFailedDescription: "Ваша сессия истекла. Обновите страницу, чтобы переподключиться.",
+      revealing: "Показываем правильные ответы…",
       play: {
         metaTitle: "Участие в квизе",
         titleWithQuiz: "{{title}} — участие",
@@ -235,6 +266,8 @@ export const ru: Translation = {
         displayNamePlaceholder: "Ваше имя",
         join: "Войти",
         joinAsAccount: "Войти как {{name}} · {{email}}",
+        joinAsGuestHint: "Вы играете как гость — результат не попадёт в личный кабинет.",
+        joinAsGuestLoginLink: "Войти, чтобы сохранить",
         waitingTitle: "Ожидание старта",
         waitingSubtitle: "Организатор скоро запустит квиз",
         roomCode: "Код комнаты",
@@ -333,6 +366,20 @@ export const ru: Translation = {
     meta: {
       questions: "{{count}} вопросов",
       minutes: "{{count}} мин",
+    },
+    categories: {
+      history: "История",
+      math: "Математика",
+      geography: "География",
+      literature: "Литература",
+      biology: "Биология",
+      physics: "Физика",
+      chemistry: "Химия",
+      art: "Искусство",
+      music: "Музыка",
+      sport: "Спорт",
+      it: "IT и технологии",
+      generalKnowledge: "Общие знания",
     },
   },
   rooms: {

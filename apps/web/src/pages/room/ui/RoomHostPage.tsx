@@ -14,7 +14,6 @@ import { FinishedScreen } from "./components/FinishedScreen";
 import { HostControls } from "./components/HostControls";
 import { LeaderboardList } from "./components/LeaderboardList";
 import { QuestionView } from "./components/QuestionView";
-import { RoomTimer } from "./components/RoomTimer";
 
 export const RoomHostPage = observer(() => {
   const { t } = useTranslation();
@@ -130,7 +129,6 @@ export const RoomHostPage = observer(() => {
                     )}
                     {quizTitle ? <Title order={2}>{quizTitle}</Title> : null}
                   </Stack>
-                  {currentQuestion ? <RoomTimer endsAt={currentQuestion.endsAt} /> : null}
                 </Group>
 
                 {totalQuestions > 0 ? <Progress value={progressValue} radius="xl" /> : null}
@@ -147,6 +145,7 @@ export const RoomHostPage = observer(() => {
                       readonly
                       respondentsByOption={optionRespondents}
                       correctOptionIds={revealedCorrectOptionIds}
+                      isRevealing={isQuestionClosing}
                     />
                   ) : (
                     <Text size="sm" c="dimmed">

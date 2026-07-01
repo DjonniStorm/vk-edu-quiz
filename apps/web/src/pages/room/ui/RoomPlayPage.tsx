@@ -7,6 +7,7 @@ import { useNavigate, useParams } from "react-router";
 import { LANG_KEYS } from "@/app/i18n";
 import { usePageHead } from "@/app/seo";
 import { buildRoomPlayPath, ROUTES } from "@/app/routes";
+import { userStore } from "@/entities/user";
 
 import { roomStore } from "../model/room.store";
 import { FinishedScreen } from "./components/FinishedScreen";
@@ -18,6 +19,10 @@ export const RoomPlayPage = observer(() => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { roomId } = useParams<{ roomId: string }>();
+
+  useEffect(() => {
+    void userStore.initialize();
+  }, []);
 
   useEffect(() => {
     if (!roomId) {
@@ -53,6 +58,7 @@ export const RoomPlayPage = observer(() => {
     selectedOptionIds,
     lastAnswerResult,
     isActionPending,
+    isQuestionClosing,
     loadError,
     wsConnected,
     wsEverConnected,
@@ -101,9 +107,12 @@ export const RoomPlayPage = observer(() => {
 
   const resultText = lastAnswerResult
     ? lastAnswerResult.isCorrect
-      ? `${t(LANG_KEYS.pages.room.play.correct)} ${t(LANG_KEYS.pages.room.play.points, {
-          count: lastAnswerResult.points,
-        })}`
+      ? `${t(LANG_KEYS.pages.room.play.correct)} ${t(
+          LANG_KEYS.pages.room.play.points,
+          {
+            count: lastAnswerResult.points,
+          },
+        )}`
       : t(LANG_KEYS.pages.room.play.incorrect)
     : undefined;
 
@@ -119,10 +128,15 @@ export const RoomPlayPage = observer(() => {
         ) : null}
 
         {phase === "join" && roomId ? (
-          <JoinForm isLoading={isActionPending} onJoin={(name) => roomStore.join(name)} />
+          <JoinForm
+            isLoading={isActionPending}
+            onJoin={(name) => roomStore.join(name)}
+          />
         ) : null}
 
-        {phase === "waiting" && room?.code ? <WaitingScreen roomCode={room.code} /> : null}
+        {phase === "waiting" && room?.code ? (
+          <WaitingScreen roomCode={room.code} />
+        ) : null}
 
         {(phase === "answering" || phase === "submitted") && currentQuestion ? (
           <QuestionView
@@ -134,12 +148,18 @@ export const RoomPlayPage = observer(() => {
             isSubmitting={isActionPending}
             submitted={phase === "submitted"}
             resultText={resultText}
-            onToggle={(optionId) => roomStore.toggleOption(optionId, currentQuestion.answerMode)}
+            isRevealing={isQuestionClosing}
+            onToggle={(optionId) =>
+              roomStore.toggleOption(optionId, currentQuestion.answerMode)
+            }
             onSubmit={() => void roomStore.submitAnswer()}
           />
         ) : null}
 
-        {phase === "submitted" && !currentQuestion && displayName && room?.code ? (
+        {phase === "submitted" &&
+        !currentQuestion &&
+        displayName &&
+        room?.code ? (
           <WaitingScreen roomCode={room.code} />
         ) : null}
 

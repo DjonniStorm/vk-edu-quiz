@@ -1,6 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 
 import type { CurrentUserDto } from "@quiz/shared";
+import { LANG_KEYS } from "@/app/i18n";
 import { errorStore } from "@/entities/error";
 import {
   authApi,
@@ -9,6 +10,13 @@ import {
   type LoginInput,
   type RegisterInput,
 } from "@/shared/api";
+
+import { getAuthErrorMessage } from "../lib/auth-error";
+
+export interface AuthActionResult {
+  success: boolean;
+  message?: string;
+}
 
 export class UserStore {
   currentUser: CurrentUserDto | null = null;
@@ -75,7 +83,7 @@ export class UserStore {
     }
   }
 
-  async login(input: LoginInput): Promise<boolean> {
+  async login(input: LoginInput): Promise<AuthActionResult> {
     try {
       const response = await authApi.login(input);
 
@@ -84,19 +92,20 @@ export class UserStore {
         this.isInitialized = true;
       });
 
-      return true;
+      return { success: true };
     } catch (error) {
       if (isCancelError(error)) {
-        return false;
+        return { success: false };
       }
 
-      errorStore.pushFromUnknown(error, "Не удалось войти");
-
-      return false;
+      return {
+        success: false,
+        message: getAuthErrorMessage(error, LANG_KEYS.auth.errors.loginFailed),
+      };
     }
   }
 
-  async register(input: RegisterInput): Promise<boolean> {
+  async register(input: RegisterInput): Promise<AuthActionResult> {
     try {
       const response = await authApi.register(input);
 
@@ -105,15 +114,16 @@ export class UserStore {
         this.isInitialized = true;
       });
 
-      return true;
+      return { success: true };
     } catch (error) {
       if (isCancelError(error)) {
-        return false;
+        return { success: false };
       }
 
-      errorStore.pushFromUnknown(error, "Не удалось зарегистрироваться");
-
-      return false;
+      return {
+        success: false,
+        message: getAuthErrorMessage(error, LANG_KEYS.auth.errors.registerFailed),
+      };
     }
   }
 
